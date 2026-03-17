@@ -1,9 +1,13 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import type { AppState, Riad, Estimation } from '@/types'
-import { DEFAULT_ZONES } from '@/lib/constants'
+import type { AppState, Riad, Estimation, ZonesSurfaces } from '@/types'
 
-const STORAGE_KEY = 'riad-vision-v3'
+const STORAGE_KEY = 'riad-vision-v4'
+
+const DEFAULT_ZONES: ZonesSurfaces = {
+  patio: 0, salon: 0, cuisine: 0, chambres: 0, sdb: 0,
+  terrasse: 0, rooftop: 0, circulation: 0, autres: 0,
+}
 
 const DEMO_RIADS: Riad[] = [
   {
@@ -13,7 +17,8 @@ const DEMO_RIADS: Riad[] = [
     etat: 'moyen', prixD: 9240000, prixN: 8400000, statut: 'negociation',
     titre: true, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false,
     potentiel: "Maison d'hôtes — 8 chambres", contraintes: 'Plomberie à refaire',
-    notes: "Zellige d'origine conservé", createdAt: new Date().toISOString(),
+    notes: "Zellige d'origine conservé", tarifNuit: 1800, tauxOccupation: 65,
+    createdAt: new Date().toISOString(),
   },
   {
     id: 2, nom: 'Riad El Bahja', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
@@ -22,16 +27,17 @@ const DEMO_RIADS: Riad[] = [
     etat: 'bon', prixD: 6600000, prixN: 5940000, statut: 'proposition',
     titre: true, meuble: true, enActivite: false, piscine: false, bassin: true, clim: true,
     potentiel: 'Résidence principale — 4 chambres', contraintes: 'R+2 max',
-    notes: '', createdAt: new Date().toISOString(),
+    notes: '', tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString(),
   },
   {
     id: 3, nom: 'Riad Dar Salam', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
-    adresse: 'Rue Bab Taghzout', quartier: 'Kasbah', proximite: '', vue: 'Vue sur les toits de la Médina',
+    adresse: 'Rue Bab Taghzout', quartier: 'Kasbah', proximite: '', vue: 'Vue sur les toits',
     surface: 350, niveaux: 4, chambres: null, sdb: null, terrasse: null,
     etat: 'mauvais', prixD: null, prixN: null, statut: 'visite',
     titre: false, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false,
     potentiel: 'Grand projet — 12 chambres', contraintes: 'Toiture à reprendre',
-    notes: 'R+4, potentiel rare', createdAt: new Date().toISOString(),
+    notes: 'R+4, potentiel rare', tarifNuit: null, tauxOccupation: null,
+    createdAt: new Date().toISOString(),
   },
 ]
 
@@ -40,19 +46,14 @@ const DEFAULT_ESTIMATION: Estimation = {
   zones: { ...DEFAULT_ZONES }, transf: [], prixPerso: '',
 }
 
-const DEFAULT_STATE: AppState = {
-  riads: DEMO_RIADS, estimation: DEFAULT_ESTIMATION, nextId: 4,
-}
-
 export function useAppState() {
-  const [state, setState] = useState<AppState>(DEFAULT_STATE)
+  const [state, setState] = useState<AppState>({
+    riads: DEMO_RIADS, estimation: DEFAULT_ESTIMATION, nextId: 4,
+  })
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setState(JSON.parse(raw) as AppState)
-    } catch {}
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) setState(JSON.parse(raw)) } catch {}
     setLoaded(true)
   }, [])
 
@@ -62,11 +63,7 @@ export function useAppState() {
   }, [state, loaded])
 
   const addRiad = useCallback((riad: Omit<Riad, 'id' | 'createdAt'>) => {
-    setState(s => ({
-      ...s,
-      riads: [...s.riads, { ...riad, id: s.nextId, createdAt: new Date().toISOString() }],
-      nextId: s.nextId + 1,
-    }))
+    setState(s => ({ ...s, riads: [...s.riads, { ...riad, id: s.nextId, createdAt: new Date().toISOString() }], nextId: s.nextId + 1 }))
   }, [])
 
   const updateRiad = useCallback((updated: Riad) => {

@@ -9,8 +9,10 @@ const EMPTY_RIAD: Partial<Riad> = {
   piscine: false, bassin: false, clim: false,
 }
 
-export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
-  riads: Riad[]; onNew: () => void; onEdit: (r: Riad) => void; onEstimate: (r: Riad) => void
+// ── RIADS LIST ──────────────────────────────────────────────────────────────
+export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelete }: {
+  riads: Riad[]; onNew: () => void; onEdit: (r: Riad) => void
+  onEstimate: (r: Riad) => void; onPresent: (r: Riad) => void; onDelete: (id: number) => void
 }) {
   return (
     <div>
@@ -26,9 +28,7 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     {r.typeBien && r.typeBien !== 'riad' && (
-                      <span style={{ fontSize: 10, color: 'var(--mid)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 4, padding: '2px 7px' }}>
-                        {TYPES_BIEN[r.typeBien]}
-                      </span>
+                      <span style={{ fontSize: 10, color: 'var(--mid)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 4, padding: '2px 7px' }}>{TYPES_BIEN[r.typeBien]}</span>
                     )}
                     <span className="serif" style={{ fontSize: 18, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300 }}>{r.nom}</span>
                     <StatutChip statut={r.statut} />
@@ -37,7 +37,6 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
                     {r.piscine && <Chip text="Piscine" color="#185FA5" />}
                     {r.bassin && !r.piscine && <Chip text="Bassin" color="#185FA5" />}
                     {r.clim && <Chip text="Clim" color="var(--mid)" />}
-                    {r.meuble && <Chip text="Meublé" color="var(--mid)" />}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--soft)', marginBottom: 8 }}>
                     {r.quartier ? r.quartier + ' — ' : ''}{r.adresse || 'Adresse à renseigner'}
@@ -50,7 +49,6 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
                     ))}
                   </div>
                   {r.proximite && <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 4 }}>📍 {r.proximite}</div>}
-                  {r.vue && <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 2 }}>👁 {r.vue}</div>}
                   {r.potentiel && <div style={{ fontSize: 12, color: 'var(--soft)', marginTop: 6, fontStyle: 'italic' }}>{r.potentiel}</div>}
                 </div>
                 <div className="riad-card-price" style={{ textAlign: 'right', minWidth: 160 }}>
@@ -59,14 +57,19 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
                       <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 2 }}>Prix {r.prixN ? 'négocié' : 'demandé'}</div>
                       <div className="serif" style={{ fontSize: 20, color: r.prixN ? 'var(--accent)' : 'var(--mid)', fontWeight: 300 }}>{fmtM(prix)}</div>
                       {m2mad && <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 2 }}>{new Intl.NumberFormat('fr-MA').format(m2mad)} MAD/m² · {fmtEUR(m2eur!)}/m²</div>}
-                      {r.prixN && r.prixD && r.prixD !== r.prixN && <div style={{ fontSize: 11, color: 'var(--soft)', textDecoration: 'line-through', marginTop: 2 }}>{fmtM(r.prixD)}</div>}
                     </>
                   ) : (
                     <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic' }}>Prix à renseigner</div>
                   )}
-                  <div className="riad-card-btns" style={{ display: 'flex', gap: 6, marginTop: 10, justifyContent: 'flex-end' }}>
-                    <Btn label="Fiche" onClick={() => onEdit(r)} sm />
+                  <div className="riad-card-btns" style={{ display: 'flex', gap: 6, marginTop: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <Btn label="Présenter" onClick={() => onPresent(r)} sm />
                     <Btn label="Estimer" onClick={() => onEstimate(r)} primary sm />
+                    <Btn label="Fiche" onClick={() => onEdit(r)} sm />
+                    <button onClick={() => onDelete(r.id)} style={{ padding: '6px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer', background: 'transparent', border: '1px solid transparent', color: 'var(--soft)', transition: 'all 0.15s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#C0392B'; (e.currentTarget as HTMLElement).style.borderColor = '#f0b8b5' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--soft)'; (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}>
+                      ✕
+                    </button>
                   </div>
                 </div>
               </div>
@@ -78,6 +81,7 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
   )
 }
 
+// ── RIAD FICHE ──────────────────────────────────────────────────────────────
 export function RiadFiche({ initial, onSave, onCancel }: {
   initial: Partial<Riad> | null; onSave: (r: Partial<Riad>) => void; onCancel: () => void
 }) {
@@ -93,10 +97,7 @@ export function RiadFiche({ initial, onSave, onCancel }: {
     if (!importUrl) return
     setImporting(true); setImportMsg('')
     try {
-      const res = await fetch('/api/import', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: importUrl }),
-      })
+      const res = await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: importUrl }) })
       const json = await res.json()
       if (json.ok && json.data) {
         const d = json.data
@@ -109,50 +110,34 @@ export function RiadFiche({ initial, onSave, onCancel }: {
           surface: d.surface ?? prev.surface, niveaux: d.niveaux ?? prev.niveaux,
           chambres: d.chambres ?? prev.chambres, sdb: d.sdb ?? prev.sdb,
           terrasse: d.terrasse ?? prev.terrasse, prixD: d.prixD ?? prev.prixD,
-          etat: d.etat || prev.etat,
-          titre: d.titre ?? prev.titre, meuble: d.meuble ?? prev.meuble,
-          enActivite: d.enActivite ?? prev.enActivite,
-          piscine: d.piscine ?? prev.piscine, bassin: d.bassin ?? prev.bassin,
-          clim: d.clim ?? prev.clim,
-          potentiel: d.potentiel || prev.potentiel, notes: d.notes || prev.notes,
-          lienSource: importUrl,
+          etat: d.etat || prev.etat, titre: d.titre ?? prev.titre,
+          meuble: d.meuble ?? prev.meuble, enActivite: d.enActivite ?? prev.enActivite,
+          piscine: d.piscine ?? prev.piscine, bassin: d.bassin ?? prev.bassin, clim: d.clim ?? prev.clim,
+          potentiel: d.potentiel || prev.potentiel, notes: d.notes || prev.notes, lienSource: importUrl,
         }))
         setImportMsg('✓ Fiche pré-remplie — vérifiez et ajustez les données')
-      } else {
-        setImportMsg(json.error || "Impossible d'importer cette annonce")
-      }
+      } else { setImportMsg(json.error || "Impossible d'importer cette annonce") }
     } catch { setImportMsg('Erreur de connexion') }
     setImporting(false)
   }
 
-  const prix = r.prixN ?? r.prixD ?? null
-
   return (
     <div>
-      <PageHeader
-        title={isNew ? 'Nouveau riad' : 'Modifier la fiche'} subtitle="Bien immobilier"
+      <PageHeader title={isNew ? 'Nouveau riad' : 'Modifier la fiche'} subtitle="Bien immobilier"
         action={<div style={{ display: 'flex', gap: 8 }}><Btn label="Annuler" onClick={onCancel} /><Btn label={isNew ? 'Créer' : 'Enregistrer'} onClick={() => { if (r.nom) onSave(r) }} primary /></div>}
       />
-
-      {/* Import */}
       <Card style={{ marginBottom: 16, padding: '16px 20px' }}>
         <div style={{ fontSize: 12, color: 'var(--mid)', marginBottom: 10 }}>Importer depuis une annonce</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input className="field-input" type="url" value={importUrl} onChange={e => setImportUrl(e.target.value)}
-            placeholder="https://cotemedina.com/... — collez le lien de l'annonce" style={{ flex: 1 }} />
-          <button onClick={handleImport} disabled={importing || !importUrl} style={{
-            padding: '9px 18px', borderRadius: 6, fontSize: 12, cursor: importing ? 'wait' : 'pointer',
-            background: importing ? 'var(--bg)' : 'var(--text)', color: importing ? 'var(--mid)' : 'var(--white)',
-            border: '1px solid var(--line2)', whiteSpace: 'nowrap', opacity: !importUrl ? 0.4 : 1,
-          }}>{importing ? 'Import...' : 'Importer'}</button>
+          <input className="field-input" type="url" value={importUrl} onChange={e => setImportUrl(e.target.value)} placeholder="https://cotemedina.com/... — collez le lien" style={{ flex: 1 }} />
+          <button onClick={handleImport} disabled={importing || !importUrl} style={{ padding: '9px 18px', borderRadius: 6, fontSize: 12, cursor: importing ? 'wait' : 'pointer', background: importing ? 'var(--bg)' : 'var(--text)', color: importing ? 'var(--mid)' : 'var(--white)', border: '1px solid var(--line2)', whiteSpace: 'nowrap', opacity: !importUrl ? 0.4 : 1 }}>
+            {importing ? 'Import...' : 'Importer'}
+          </button>
         </div>
         {importMsg && (
-          <div style={{
-            marginTop: 8, fontSize: 12, padding: '8px 12px', borderRadius: 6,
-            background: importMsg.startsWith('✓') ? 'var(--green-bg)' : '#fdf0ef',
-            color: importMsg.startsWith('✓') ? 'var(--green)' : '#C0392B',
-            border: `1px solid ${importMsg.startsWith('✓') ? 'rgba(58,125,92,0.2)' : '#f0b8b5'}`,
-          }}>{importMsg}</div>
+          <div style={{ marginTop: 8, fontSize: 12, padding: '8px 12px', borderRadius: 6, background: importMsg.startsWith('✓') ? 'var(--green-bg)' : '#fdf0ef', color: importMsg.startsWith('✓') ? 'var(--green)' : '#C0392B', border: `1px solid ${importMsg.startsWith('✓') ? 'rgba(58,125,92,0.2)' : '#f0b8b5'}` }}>
+            {importMsg}
+          </div>
         )}
       </Card>
 
@@ -173,27 +158,24 @@ export function RiadFiche({ initial, onSave, onCancel }: {
             <FieldInput label="Agence source" value={r.agenceSource} onChange={v => set('agenceSource', v)} placeholder="Côté Médina…" />
           </div>
           <FieldInput label="Adresse / Derb" value={r.adresse} onChange={v => set('adresse', v)} placeholder="Derb Sidi Bouamar…" />
-          <FieldSelect label="Quartier" value={r.quartier ?? ''} onChange={v => set('quartier', v)}
-            options={QUARTIERS.map(q => [q, q || '— Quartier —'])} />
+          <FieldSelect label="Quartier" value={r.quartier ?? ''} onChange={v => set('quartier', v)} options={QUARTIERS.map(q => [q, q || '— Quartier —'])} />
           <FieldSelect label="Statut" value={r.statut ?? ''} onChange={v => set('statut', v)}
             options={[['', '— Statut —'], ['visite', 'Visite planifiée'], ['negociation', 'En négociation'], ['proposition', 'Proposition envoyée'], ['signe', 'Signé'], ['archive', 'Archivé']]} />
           <FieldSelect label="État du bien" value={r.etat ?? ''} onChange={v => set('etat', v)}
             options={[['', '— État —'], ['bon', 'Bon état / rénové'], ['moyen', 'État moyen'], ['mauvais', 'Mauvais état'], ['ruine', 'À rénover']]} />
           <FieldInput label="Proximité" value={r.proximite} onChange={v => set('proximite', v)} placeholder="5 min Jemaa el-Fna, tombeaux Saadiens…" />
           <FieldInput label="Vue" value={r.vue} onChange={v => set('vue', v)} placeholder="Vue Palais Royal, jardins…" />
-
-          {/* Badges équipements */}
           <div style={{ marginTop: 4 }}>
             <div className="label">Équipements & statut</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-              {([['titre', 'Titré'], ['meuble', 'Meublé / équipé'], ['enActivite', 'En activité'], ['piscine', 'Piscine'], ['bassin', 'Bassin'], ['clim', 'Climatisation']] as const).map(([k, l]) => (
-                <button key={k} onClick={() => toggle(k)} style={{
-                  padding: '6px 12px', borderRadius: 20, fontSize: 11, cursor: 'pointer',
-                  background: r[k] ? 'var(--green-bg)' : 'var(--bg)',
-                  color: r[k] ? 'var(--green)' : 'var(--soft)',
-                  border: `1px solid ${r[k] ? 'rgba(58,125,92,0.3)' : 'var(--line)'}`,
-                }}>{r[k] ? '✓ ' : ''}{l}</button>
-              ))}
+              {(['titre', 'meuble', 'enActivite', 'piscine', 'bassin', 'clim'] as const).map((k) => {
+                const labels: Record<string, string> = { titre: 'Titré', meuble: 'Meublé / équipé', enActivite: 'En activité', piscine: 'Piscine', bassin: 'Bassin', clim: 'Climatisation' }
+                return (
+                  <button key={k} onClick={() => toggle(k)} style={{ padding: '6px 12px', borderRadius: 20, fontSize: 11, cursor: 'pointer', background: r[k] ? 'var(--green-bg)' : 'var(--bg)', color: r[k] ? 'var(--green)' : 'var(--soft)', border: `1px solid ${r[k] ? 'rgba(58,125,92,0.3)' : 'var(--line)'}` }}>
+                    {r[k] ? '✓ ' : ''}{labels[k]}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </Card>
@@ -214,31 +196,51 @@ export function RiadFiche({ initial, onSave, onCancel }: {
               <FieldInput label="Prix demandé (MAD)" value={r.prixD} onChange={v => set('prixD', v ? Number(v) : null)} type="number" placeholder="—" />
               <FieldInput label="Prix négocié (MAD)" value={r.prixN} onChange={v => set('prixN', v ? Number(v) : null)} type="number" placeholder="—" />
             </div>
-            <PrixM2Block prix={prix} surface={r.surface ?? null} />
+            <PrixM2Block prix={r.prixN ?? r.prixD ?? null} surface={r.surface ?? null} />
           </Card>
 
           <Card>
-            <SectionLabel>Potentiel & contraintes</SectionLabel>
-            <div style={{ marginBottom: 16 }}>
-              <div className="label">Potentiel d&apos;aménagement</div>
-              <textarea className="field-input" value={r.potentiel ?? ''} onChange={e => set('potentiel', e.target.value)}
-                placeholder="Maison d'hôtes, piscine envisageable…" style={{ height: 64, resize: 'vertical' }} />
+            <SectionLabel>Simulation locative</SectionLabel>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <FieldInput label="Tarif nuit (MAD)" value={r.tarifNuit} onChange={v => set('tarifNuit', v ? Number(v) : null)} type="number" placeholder="1 500" />
+              <FieldInput label="Taux occupation (%)" value={r.tauxOccupation} onChange={v => set('tauxOccupation', v ? Number(v) : null)} type="number" placeholder="65" />
             </div>
-            <div style={{ marginBottom: 16 }}>
+            {r.tarifNuit && r.tauxOccupation ? (() => {
+              const nuits = Math.round(365 * r.tauxOccupation / 100)
+              const caAnnuel = r.tarifNuit * nuits
+              const netAnnuel = Math.round(caAnnuel * 0.6)
+              return (
+                <div style={{ background: 'var(--accent-bg)', border: '1px solid rgba(140,90,40,0.2)', borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', gap: 20 }}>
+                    <div><div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 3 }}>CA ANNUEL BRUT</div><div className="serif" style={{ fontSize: 18, color: 'var(--accent)', fontWeight: 300 }}>{fmtM(caAnnuel)}</div></div>
+                    <div><div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 3 }}>NET ESTIMÉ (–40%)</div><div className="serif" style={{ fontSize: 18, color: 'var(--accent)', fontWeight: 300 }}>{fmtM(netAnnuel)}</div></div>
+                    <div><div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 3 }}>NUITS / AN</div><div style={{ fontSize: 16, color: 'var(--mid)' }}>{nuits}</div></div>
+                  </div>
+                </div>
+              )
+            })() : (
+              <div style={{ fontSize: 11, color: 'var(--soft)', fontStyle: 'italic' }}>Renseignez le tarif nuit et le taux d&apos;occupation pour voir la simulation</div>
+            )}
+          </Card>
+
+          <Card>
+            <SectionLabel>Potentiel, contraintes & notes</SectionLabel>
+            <div style={{ marginBottom: 12 }}>
+              <div className="label">Potentiel d&apos;aménagement</div>
+              <textarea className="field-input" value={r.potentiel ?? ''} onChange={e => set('potentiel', e.target.value)} placeholder="Maison d'hôtes, piscine envisageable…" style={{ height: 60, resize: 'vertical' }} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
               <div className="label">Contraintes</div>
-              <textarea className="field-input" value={r.contraintes ?? ''} onChange={e => set('contraintes', e.target.value)}
-                placeholder="Plomberie à refaire, mitoyenneté…" style={{ height: 52, resize: 'vertical' }} />
+              <textarea className="field-input" value={r.contraintes ?? ''} onChange={e => set('contraintes', e.target.value)} placeholder="Plomberie, mitoyenneté…" style={{ height: 48, resize: 'vertical' }} />
             </div>
             <div>
               <div className="label">Notes</div>
-              <textarea className="field-input" value={r.notes ?? ''} onChange={e => set('notes', e.target.value)}
-                placeholder="Observations, points forts, contexte vendeur…" style={{ height: 64, resize: 'vertical' }} />
+              <textarea className="field-input" value={r.notes ?? ''} onChange={e => set('notes', e.target.value)} placeholder="Observations, contexte vendeur…" style={{ height: 60, resize: 'vertical' }} />
             </div>
             {r.lienSource && (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 10 }}>
                 <div className="label">Lien source</div>
-                <a href={r.lienSource} target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize: 11, color: 'var(--accent)', wordBreak: 'break-all' }}>{r.lienSource}</a>
+                <a href={r.lienSource} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--accent)', wordBreak: 'break-all' }}>{r.lienSource}</a>
               </div>
             )}
           </Card>
@@ -248,6 +250,7 @@ export function RiadFiche({ initial, onSave, onCancel }: {
   )
 }
 
+// ── ESTIMATEUR ──────────────────────────────────────────────────────────────
 export function Estimateur({ riads, estimation, onChange, onResults }: {
   riads: Riad[]; estimation: Estimation; onChange: (e: Partial<Estimation>) => void; onResults: () => void
 }) {
@@ -264,11 +267,7 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
           <SectionLabel>Configuration</SectionLabel>
           <div style={{ marginBottom: 16 }}>
             <div className="label">Riad concerné</div>
-            <select className="field-input" value={e.riadId ?? ''} onChange={ev => {
-              const id = ev.target.value ? Number(ev.target.value) : null
-              const r = riads.find(x => x.id === id)
-              onChange({ riadId: id, ...(r?.surface ? { surface: r.surface } : {}) })
-            }}>
+            <select className="field-input" value={e.riadId ?? ''} onChange={ev => { const id = ev.target.value ? Number(ev.target.value) : null; const r = riads.find(x => x.id === id); onChange({ riadId: id, ...(r?.surface ? { surface: r.surface } : {}) }) }}>
               <option value="">— Aucun riad sélectionné —</option>
               {riads.map(r => <option key={r.id} value={r.id}>{r.nom}</option>)}
             </select>
@@ -277,12 +276,7 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
             <div className="label">Mode</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
               {([['rapide', 'Rapide'], ['detaille', 'Détaillé']] as const).map(([m, ml]) => (
-                <button key={m} onClick={() => onChange({ mode: m })} style={{
-                  flex: 1, padding: 8, borderRadius: 6, fontSize: 12, cursor: 'pointer',
-                  background: e.mode === m ? 'var(--text)' : 'var(--white)',
-                  color: e.mode === m ? 'var(--white)' : 'var(--mid)',
-                  border: `1px solid ${e.mode === m ? 'var(--text)' : 'var(--line2)'}`,
-                }}>{ml}</button>
+                <button key={m} onClick={() => onChange({ mode: m })} style={{ flex: 1, padding: 8, borderRadius: 6, fontSize: 12, cursor: 'pointer', background: e.mode === m ? 'var(--text)' : 'var(--white)', color: e.mode === m ? 'var(--white)' : 'var(--mid)', border: `1px solid ${e.mode === m ? 'var(--text)' : 'var(--line2)'}` }}>{ml}</button>
               ))}
             </div>
           </div>
@@ -290,12 +284,7 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
             <div className="label">Niveau de rénovation</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 5 }}>
               {(Object.entries(LEVELS) as [string, typeof LEVELS[keyof typeof LEVELS]][]).map(([k, v]) => (
-                <button key={k} onClick={() => onChange({ niveau: k as Estimation['niveau'] })} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 12px', borderRadius: 6, cursor: 'pointer', textAlign: 'left',
-                  background: e.niveau === k ? v.bg : 'var(--white)',
-                  border: `1px solid ${e.niveau === k ? v.color + '55' : 'var(--line)'}`,
-                }}>
+                <button key={k} onClick={() => onChange({ niveau: k as Estimation['niveau'] })} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 6, cursor: 'pointer', textAlign: 'left', background: e.niveau === k ? v.bg : 'var(--white)', border: `1px solid ${e.niveau === k ? v.color + '55' : 'var(--line)'}` }}>
                   <span style={{ fontSize: 12, color: e.niveau === k ? v.color : 'var(--mid)' }}>{v.label}</span>
                   <span style={{ fontSize: 11, color: e.niveau === k ? v.color : 'var(--soft)' }}>{Math.round(v.min / 1000)}–{Math.round(v.max / 1000)} K/m²</span>
                 </button>
@@ -304,20 +293,14 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
           </div>
           <div>
             <div className="label">Prix maître d&apos;œuvre (MAD/m²)</div>
-            <input className="field-input" type="number" value={e.prixPerso}
-              onChange={ev => onChange({ prixPerso: ev.target.value })} placeholder="Optionnel — remplace les fourchettes" />
+            <input className="field-input" type="number" value={e.prixPerso} onChange={ev => onChange({ prixPerso: ev.target.value })} placeholder="Optionnel — remplace les fourchettes" />
           </div>
         </Card>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {e.mode === 'rapide' ? (
             <Card>
               <SectionLabel>Surface à rénover</SectionLabel>
-              <div style={{ marginBottom: 16 }}>
-                <div className="label">m² total</div>
-                <input className="field-input" type="number" value={e.surface}
-                  onChange={ev => onChange({ surface: Number(ev.target.value) })} placeholder="200" />
-              </div>
+              <div style={{ marginBottom: 16 }}><div className="label">m² total</div><input className="field-input" type="number" value={e.surface} onChange={ev => onChange({ surface: Number(ev.target.value) })} placeholder="200" /></div>
               <Divider />
               <div style={{ padding: '6px 0' }}>
                 <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>Estimation rapide</div>
@@ -330,19 +313,11 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
               <SectionLabel>Surfaces par zone</SectionLabel>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {ZONES.map(z => (
-                  <div key={z.k}>
-                    <div className="label">{z.l}</div>
-                    <input className="field-input" type="number" value={e.zones[z.k] || 0}
-                      onChange={ev => onChange({ zones: { ...e.zones, [z.k]: Number(ev.target.value) } })}
-                      placeholder="0" style={{ padding: '7px 10px' }} />
-                  </div>
+                  <div key={z.k}><div className="label">{z.l}</div><input className="field-input" type="number" value={e.zones[z.k] || 0} onChange={ev => onChange({ zones: { ...e.zones, [z.k]: Number(ev.target.value) } })} placeholder="0" style={{ padding: '7px 10px' }} /></div>
                 ))}
               </div>
               <Divider />
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12, color: 'var(--mid)' }}>Total</span>
-                <span className="serif" style={{ fontSize: 16, fontWeight: 300 }}>{surfTotal} m²</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 12, color: 'var(--mid)' }}>Total</span><span className="serif" style={{ fontSize: 16, fontWeight: 300 }}>{surfTotal} m²</span></div>
             </Card>
           )}
           <Card>
@@ -351,15 +326,7 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
               {TRANSFORMATIONS.map(t => {
                 const checked = e.transf.includes(t.k)
                 return (
-                  <button key={t.k} onClick={() => {
-                    const tr = checked ? e.transf.filter(x => x !== t.k) : [...e.transf, t.k]
-                    onChange({ transf: tr })
-                  }} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '8px 10px', borderRadius: 6, cursor: 'pointer', textAlign: 'left',
-                    background: checked ? 'var(--accent-bg)' : 'var(--bg)',
-                    border: `1px solid ${checked ? 'rgba(140,90,40,0.35)' : 'var(--line)'}`,
-                  }}>
+                  <button key={t.k} onClick={() => { const tr = checked ? e.transf.filter(x => x !== t.k) : [...e.transf, t.k]; onChange({ transf: tr }) }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, cursor: 'pointer', textAlign: 'left', background: checked ? 'var(--accent-bg)' : 'var(--bg)', border: `1px solid ${checked ? 'rgba(140,90,40,0.35)' : 'var(--line)'}` }}>
                     <span style={{ fontSize: 12, color: checked ? 'var(--accent)' : 'var(--mid)' }}>{checked ? '✓  ' : ''}{t.l}</span>
                     <span style={{ fontSize: 11, color: checked ? 'var(--accent)' : 'var(--soft)' }}>{fmtM(t.f)}</span>
                   </button>
@@ -373,8 +340,9 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
   )
 }
 
-export function Resultats({ estimation, riads, onBack, onRiads }: {
-  estimation: Estimation; riads: Riad[]; onBack: () => void; onRiads: () => void
+// ── RESULTATS ───────────────────────────────────────────────────────────────
+export function Resultats({ estimation, riads, onBack, onRiads, onPresent }: {
+  estimation: Estimation; riads: Riad[]; onBack: () => void; onRiads: () => void; onPresent: () => void
 }) {
   const e = estimation
   const surf = e.mode === 'rapide' ? Number(e.surface) || 0 : Object.values(e.zones).reduce((a, b) => a + (Number(b) || 0), 0)
@@ -384,7 +352,9 @@ export function Resultats({ estimation, riads, onBack, onRiads }: {
 
   return (
     <div>
-      <PageHeader title="Résultats travaux" subtitle={(riad ? riad.nom + ' — ' : '') + res.lvl.label} action={<Btn label="← Modifier" onClick={onBack} />} />
+      <PageHeader title="Résultats travaux" subtitle={(riad ? riad.nom + ' — ' : '') + res.lvl.label}
+        action={<div style={{ display: 'flex', gap: 8 }}><Btn label="← Modifier" onClick={onBack} /><Btn label="Présenter au client →" onClick={onPresent} primary sm /></div>}
+      />
       <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Card>
@@ -411,7 +381,6 @@ export function Resultats({ estimation, riads, onBack, onRiads }: {
             </div>
           </Card>
         </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {e.transf.length > 0 && (
             <Card>
@@ -436,9 +405,7 @@ export function Resultats({ estimation, riads, onBack, onRiads }: {
                       <span style={{ fontSize: 11, color: active ? v.color : 'var(--mid)' }}>{v.label}</span>
                       <span className="serif" style={{ fontSize: 13, color: active ? v.color : 'var(--mid)', fontWeight: 300 }}>{fmtM(tot)}</span>
                     </div>
-                    <div style={{ height: 3, background: 'var(--line)', borderRadius: 2 }}>
-                      <div style={{ height: '100%', width: pct + '%', background: active ? v.color : 'var(--soft)', borderRadius: 2 }} />
-                    </div>
+                    <div style={{ height: 3, background: 'var(--line)', borderRadius: 2 }}><div style={{ height: '100%', width: pct + '%', background: active ? v.color : 'var(--soft)', borderRadius: 2 }} /></div>
                   </div>
                 )
               })}
@@ -450,11 +417,7 @@ export function Resultats({ estimation, riads, onBack, onRiads }: {
               <div className="serif" style={{ fontSize: 18, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300, marginBottom: 4 }}>{riad.nom}</div>
               <div style={{ fontSize: 12, color: 'var(--soft)', marginBottom: 10 }}>{riad.quartier ? riad.quartier + ' — ' : ''}{riad.adresse}</div>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                {[
-                  riad.surface ? [riad.surface + ' m²', 'Surface'] as [string,string] : null,
-                  riad.chambres ? [riad.chambres + ' ch.', 'Chambres'] as [string,string] : null,
-                  (riad.prixN ?? riad.prixD) ? [fmtM(riad.prixN ?? riad.prixD), 'Prix'] as [string,string] : null,
-                ].filter((x): x is [string, string] => x !== null).map(([v, l]) => (
+                {[riad.surface ? [riad.surface + ' m²', 'Surface'] as [string,string] : null, riad.chambres ? [riad.chambres + ' ch.', 'Chambres'] as [string,string] : null, (riad.prixN ?? riad.prixD) ? [fmtM(riad.prixN ?? riad.prixD), 'Prix'] as [string,string] : null].filter((x): x is [string,string] => x !== null).map(([v, l]) => (
                   <div key={l}><div style={{ fontSize: 10, color: 'var(--soft)' }}>{l}</div><div style={{ fontSize: 13, marginTop: 2 }}>{v}</div></div>
                 ))}
               </div>
@@ -467,5 +430,181 @@ export function Resultats({ estimation, riads, onBack, onRiads }: {
         </div>
       </div>
     </div>
+  )
+}
+
+// ── PRESENTATION CLIENT ──────────────────────────────────────────────────────
+export function Presentation({ estimation, riads, onBack }: {
+  estimation: Estimation; riads: Riad[]; onBack: () => void
+}) {
+  const e = estimation
+  const surf = e.mode === 'rapide' ? Number(e.surface) || 0 : Object.values(e.zones).reduce((a, b) => a + (Number(b) || 0), 0)
+  const res = calcEstimation(e.niveau, surf, e.transf, e.prixPerso)
+  const riad = riads.find(r => r.id === e.riadId)
+  const prix = riad ? (riad.prixN ?? riad.prixD) : null
+
+  // Rentabilité
+  const hasRental = riad?.tarifNuit && riad?.tauxOccupation
+  const nuits = hasRental ? Math.round(365 * riad!.tauxOccupation! / 100) : null
+  const caAnnuel = hasRental ? riad!.tarifNuit! * nuits! : null
+  const netAnnuel = caAnnuel ? Math.round(caAnnuel * 0.6) : null
+  const projetTotal = prix ? prix + res.total : null
+  const rendement = netAnnuel && projetTotal ? ((netAnnuel / projetTotal) * 100).toFixed(1) : null
+
+  const handlePrint = () => window.print()
+
+  return (
+    <>
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-page { padding: 0 !important; }
+          body { background: white !important; }
+        }
+      `}</style>
+
+      <div className="no-print" style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div className="serif" style={{ fontSize: 24, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300 }}>Présentation client</div>
+          <div style={{ fontSize: 12, color: 'var(--soft)', marginTop: 4 }}>Vue simplifiée — montrez cet écran ou imprimez en PDF</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn label="← Retour" onClick={onBack} />
+          <Btn label="Imprimer / PDF" onClick={handlePrint} primary />
+        </div>
+      </div>
+
+      {/* Contenu présentation */}
+      <div className="print-page" style={{ maxWidth: 720, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', padding: '32px 0 24px', borderBottom: '1px solid var(--line)', marginBottom: 28 }}>
+          <div style={{ fontSize: 11, color: 'var(--soft)', letterSpacing: 2, marginBottom: 8 }}>ESTIMATION · RIAD VISION</div>
+          <div className="serif" style={{ fontSize: 36, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300, marginBottom: 6 }}>
+            {riad?.nom || 'Estimation travaux'}
+          </div>
+          {riad && (
+            <div style={{ fontSize: 14, color: 'var(--soft)' }}>
+              {riad.quartier ? riad.quartier + ' · ' : ''}{riad.adresse}
+              {riad.proximite ? ' · ' + riad.proximite : ''}
+            </div>
+          )}
+        </div>
+
+        {/* Badges riad */}
+        {riad && (riad.titre || riad.piscine || riad.bassin || riad.clim || riad.meuble) && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 28, flexWrap: 'wrap' }}>
+            {riad.titre && <Chip text="Titre foncier" color="var(--green)" />}
+            {riad.piscine && <Chip text="Piscine" color="#185FA5" />}
+            {riad.bassin && !riad.piscine && <Chip text="Bassin" color="#185FA5" />}
+            {riad.clim && <Chip text="Climatisation" color="var(--mid)" />}
+            {riad.meuble && <Chip text="Meublé & équipé" color="var(--mid)" />}
+          </div>
+        )}
+
+        {/* Chiffres clés */}
+        <div style={{ display: 'grid', gridTemplateColumns: prix ? '1fr 1fr 1fr' : '1fr 1fr', gap: 12, marginBottom: 28 }}>
+          {prix && (
+            <div style={{ background: 'var(--white)', border: '1px solid var(--line)', borderRadius: 10, padding: '20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>PRIX {riad?.prixN ? 'NÉGOCIÉ' : 'DEMANDÉ'}</div>
+              <div className="serif" style={{ fontSize: 26, color: 'var(--accent)', fontWeight: 300 }}>{fmtM(prix)}</div>
+              {riad?.surface && <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 4 }}>{new Intl.NumberFormat('fr-MA').format(Math.round(prix / riad.surface))} MAD/m²</div>}
+            </div>
+          )}
+          <div style={{ background: 'var(--white)', border: '2px solid var(--text)', borderRadius: 10, padding: '20px', textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>BUDGET TRAVAUX</div>
+            <div className="serif" style={{ fontSize: 26, color: 'var(--text)', fontWeight: 300 }}>{fmtM(res.total)}</div>
+            <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 4 }}>{res.lvl.label}</div>
+          </div>
+          {projetTotal && (
+            <div style={{ background: 'var(--accent-bg)', border: '1px solid rgba(140,90,40,0.3)', borderRadius: 10, padding: '20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>PROJET TOTAL</div>
+              <div className="serif" style={{ fontSize: 26, color: 'var(--accent)', fontWeight: 300 }}>{fmtM(projetTotal)}</div>
+              <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 4 }}>achat + rénovation</div>
+            </div>
+          )}
+        </div>
+
+        {/* Caractéristiques */}
+        {riad && (
+          <Card style={{ marginBottom: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+              {[
+                riad.surface ? [riad.surface + ' m²', 'Surface'] : null,
+                riad.niveaux ? [riad.niveaux + ' niveaux', 'Structure'] : null,
+                riad.chambres ? [riad.chambres + ' chambres', 'Hébergement'] : null,
+                riad.sdb ? [riad.sdb + ' salles de bain', 'Sanitaires'] : null,
+                riad.terrasse ? [riad.terrasse + ' m²', 'Terrasse'] : null,
+                riad.etat ? [ETATS[riad.etat], 'État actuel'] : null,
+              ].filter((x): x is [string, string] => x !== null).map(([v, l]) => (
+                <div key={l} style={{ textAlign: 'center' }}>
+                  <div className="serif" style={{ fontSize: 20, fontWeight: 300, color: 'var(--text)' }}>{v}</div>
+                  <div style={{ fontSize: 10, color: 'var(--soft)', marginTop: 3 }}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Fourchette travaux */}
+        <Card style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: 'var(--mid)', marginBottom: 16 }}>Fourchette budgétaire travaux</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+            {[['Budget min', fmtM(res.tMin), 'var(--green)'], ['Budget estimé', fmtM(res.total), 'var(--text)'], ['Budget max', fmtM(res.tMax), 'var(--accent)']].map(([l, v, c]) => (
+              <div key={l} style={{ textAlign: 'center', padding: '12px', background: 'var(--bg)', borderRadius: 8 }}>
+                <div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 6 }}>{l}</div>
+                <div className="serif" style={{ fontSize: 18, color: c, fontWeight: 300 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          {e.transf.length > 0 && (
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>Transformations incluses</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {e.transf.map(k => { const t = TRANSFORMATIONS.find(x => x.k === k); return t ? <Chip key={k} text={t.l} color="var(--accent)" /> : null })}
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Rentabilité */}
+        {hasRental && netAnnuel && (
+          <Card style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: 'var(--mid)', marginBottom: 16 }}>Simulation rentabilité locative</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+              {[
+                [riad!.tarifNuit + ' MAD', 'Tarif / nuit'],
+                [riad!.tauxOccupation + '%', 'Taux occupation'],
+                [fmtM(caAnnuel!), 'CA annuel brut'],
+                [rendement ? rendement + '%' : '—', 'Rendement net'],
+              ].map(([v, l]) => (
+                <div key={l} style={{ textAlign: 'center', padding: '12px', background: 'var(--accent-bg)', borderRadius: 8 }}>
+                  <div className="serif" style={{ fontSize: 18, color: 'var(--accent)', fontWeight: 300 }}>{v}</div>
+                  <div style={{ fontSize: 10, color: 'var(--soft)', marginTop: 4 }}>{l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, fontSize: 11, color: 'var(--soft)', fontStyle: 'italic' }}>
+              Estimation basée sur {nuits} nuits/an · Net après charges estimées à 40%
+            </div>
+          </Card>
+        )}
+
+        {/* Potentiel */}
+        {riad?.potentiel && (
+          <div style={{ padding: '16px 20px', background: 'var(--sidebar)', borderRadius: 10, border: '1px solid var(--line)', marginBottom: 20 }}>
+            <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 6 }}>POTENTIEL DU BIEN</div>
+            <div className="serif" style={{ fontSize: 18, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300 }}>{riad.potentiel}</div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', padding: '20px 0', borderTop: '1px solid var(--line)', marginTop: 8 }}>
+          <div className="serif" style={{ fontSize: 13, color: 'var(--soft)', fontStyle: 'italic' }}>Riad Vision · Marrakech</div>
+          <div style={{ fontSize: 10, color: 'var(--soft)', marginTop: 4 }}>Estimation indicative — prix et travaux à confirmer avec le maître d&apos;œuvre</div>
+        </div>
+      </div>
+    </>
   )
 }
