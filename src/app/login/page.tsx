@@ -69,3 +69,4 @@ function LoginForm() {
 export default function LoginPage() {
   return <Suspense><LoginForm /></Suspense>
 }
+export const dynamic = 'force-dynamic'

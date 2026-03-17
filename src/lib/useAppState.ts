@@ -1,8 +1,9 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import type { AppState, Riad, Estimation, Prestataire, TarifPrestataire, ZonesSurfaces } from '@/types'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import type { AppState, Riad, Estimation, Prestataire, ZonesSurfaces } from '@/types'
+import { loadFromDB, saveRiad, deleteRiad as dbDeleteRiad, savePrestataire, deletePrestataire as dbDeletePresta, saveEstimation } from './db'
 
-const STORAGE_KEY = 'riad-vision-v5'
+const LS_KEY = 'riad-vision-v5'
 
 const DEFAULT_ZONES: ZonesSurfaces = {
   patio: 0, salon: 0, cuisine: 0, chambres: 0, sdb: 0,
@@ -10,35 +11,9 @@ const DEFAULT_ZONES: ZonesSurfaces = {
 }
 
 const DEMO_RIADS: Riad[] = [
-  {
-    id: 1, nom: 'Riad Almas', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
-    adresse: 'Derb Sidi Bouamar', quartier: 'Mouassine', proximite: '5 min Jemaa el-Fna', vue: '',
-    surface: 280, niveaux: 3, chambres: 6, sdb: 6, terrasse: 40, terrasse2: null, terrasse3: null,
-    etat: 'moyen', prixD: 9240000, prixN: 8400000, statut: 'negociation',
-    titre: true, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false,
-    potentiel: "Maison d'hôtes — 8 chambres", contraintes: 'Plomberie à refaire',
-    notes: "Zellige d'origine conservé", tarifNuit: 1800, tauxOccupation: 65,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 2, nom: 'Riad El Bahja', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
-    adresse: 'Derb Chorfa Lakbir', quartier: 'Bab Doukkala', proximite: '', vue: '',
-    surface: 180, niveaux: 2, chambres: 4, sdb: 4, terrasse: 20, terrasse2: null, terrasse3: null,
-    etat: 'bon', prixD: 6600000, prixN: 5940000, statut: 'proposition',
-    titre: true, meuble: true, enActivite: false, piscine: false, bassin: true, clim: true,
-    potentiel: 'Résidence principale — 4 chambres', contraintes: 'R+2 max',
-    notes: '', tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString(),
-  },
-  {
-    id: 3, nom: 'Riad Dar Salam', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
-    adresse: 'Rue Bab Taghzout', quartier: 'Kasbah', proximite: '', vue: 'Vue sur les toits',
-    surface: 350, niveaux: 4, chambres: null, sdb: null, terrasse: null, terrasse2: null, terrasse3: null,
-    etat: 'mauvais', prixD: null, prixN: null, statut: 'visite',
-    titre: false, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false,
-    potentiel: 'Grand projet — 12 chambres', contraintes: 'Toiture à reprendre',
-    notes: 'R+4, potentiel rare', tarifNuit: null, tauxOccupation: null,
-    createdAt: new Date().toISOString(),
-  },
+  { id: 1, nom: 'Riad Almas', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Derb Sidi Bouamar', quartier: 'Mouassine', proximite: '5 min Jemaa el-Fna', vue: '', surface: 280, niveaux: 3, chambres: 6, sdb: 6, terrasse: 40, terrasse2: null, terrasse3: null, etat: 'moyen', prixD: 9240000, prixN: 8400000, statut: 'negociation', titre: true, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false, potentiel: "Maison d'hôtes — 8 chambres", contraintes: 'Plomberie à refaire', notes: "Zellige d'origine conservé", tarifNuit: 1800, tauxOccupation: 65, createdAt: new Date().toISOString() },
+  { id: 2, nom: 'Riad El Bahja', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Derb Chorfa Lakbir', quartier: 'Bab Doukkala', proximite: '', vue: '', surface: 180, niveaux: 2, chambres: 4, sdb: 4, terrasse: 20, terrasse2: null, terrasse3: null, etat: 'bon', prixD: 6600000, prixN: 5940000, statut: 'proposition', titre: true, meuble: true, enActivite: false, piscine: false, bassin: true, clim: true, potentiel: 'Résidence principale — 4 chambres', contraintes: 'R+2 max', notes: '', tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString() },
+  { id: 3, nom: 'Riad Dar Salam', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Rue Bab Taghzout', quartier: 'Kasbah', proximite: '', vue: 'Vue sur les toits', surface: 350, niveaux: 4, chambres: null, sdb: null, terrasse: null, terrasse2: null, terrasse3: null, etat: 'mauvais', prixD: null, prixN: null, statut: 'visite', titre: false, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false, potentiel: 'Grand projet — 12 chambres', contraintes: 'Toiture à reprendre', notes: 'R+4, potentiel rare', tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString() },
 ]
 
 const DEFAULT_ESTIMATION: Estimation = {
@@ -47,53 +22,87 @@ const DEFAULT_ESTIMATION: Estimation = {
 }
 
 const DEFAULT_STATE: AppState = {
-  riads: DEMO_RIADS,
-  estimation: DEFAULT_ESTIMATION,
-  prestataires: [],
-  nextId: 4,
-  nextPrestaId: 1,
+  riads: DEMO_RIADS, estimation: DEFAULT_ESTIMATION,
+  prestataires: [], nextId: 4, nextPrestaId: 1,
 }
 
 export function useAppState() {
   const [state, setState] = useState<AppState>(DEFAULT_STATE)
   const [loaded, setLoaded] = useState(false)
+  const initialized = useRef(false)
 
   useEffect(() => {
-    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) setState(JSON.parse(raw)) } catch {}
-    setLoaded(true)
+    if (initialized.current) return
+    initialized.current = true
+
+    async function init() {
+      const dbData = await loadFromDB()
+
+      if (dbData && dbData.riads && dbData.riads.length > 0) {
+        setState(s => ({ ...s, ...dbData }))
+        try { localStorage.setItem(LS_KEY, JSON.stringify({ ...DEFAULT_STATE, ...dbData })) } catch {}
+      } else {
+        // Try localStorage migration
+        try {
+          const raw = localStorage.getItem(LS_KEY)
+          if (raw) {
+            const local = JSON.parse(raw) as AppState
+            setState(local)
+            // Migrate to DB
+            await Promise.all([
+              ...local.riads.map(r => saveRiad(r)),
+              ...(local.prestataires || []).map(p => savePrestataire(p)),
+              saveEstimation(local.estimation),
+            ])
+          }
+        } catch {}
+      }
+      setLoaded(true)
+    }
+
+    init()
   }, [])
 
+  // localStorage backup on every change
   useEffect(() => {
     if (!loaded) return
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch {}
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)) } catch {}
   }, [state, loaded])
 
   const addRiad = useCallback((riad: Omit<Riad, 'id' | 'createdAt'>) => {
-    setState(s => ({ ...s, riads: [...s.riads, { ...riad, id: s.nextId, createdAt: new Date().toISOString() }], nextId: s.nextId + 1 }))
+    setState(s => {
+      const r: Riad = { ...riad, id: s.nextId, createdAt: new Date().toISOString() }
+      saveRiad(r)
+      return { ...s, riads: [...s.riads, r], nextId: s.nextId + 1 }
+    })
   }, [])
 
   const updateRiad = useCallback((updated: Riad) => {
-    setState(s => ({ ...s, riads: s.riads.map(r => r.id === updated.id ? updated : r) }))
+    setState(s => { saveRiad(updated); return { ...s, riads: s.riads.map(r => r.id === updated.id ? updated : r) } })
   }, [])
 
   const deleteRiad = useCallback((id: number) => {
-    setState(s => ({ ...s, riads: s.riads.filter(r => r.id !== id) }))
+    setState(s => { dbDeleteRiad(id); return { ...s, riads: s.riads.filter(r => r.id !== id) } })
   }, [])
 
   const setEstimation = useCallback((est: Partial<Estimation>) => {
-    setState(s => ({ ...s, estimation: { ...s.estimation, ...est } }))
+    setState(s => { const u = { ...s.estimation, ...est }; saveEstimation(u); return { ...s, estimation: u } })
   }, [])
 
   const addPrestataire = useCallback((p: Omit<Prestataire, 'id' | 'createdAt'>) => {
-    setState(s => ({ ...s, prestataires: [...s.prestataires, { ...p, id: s.nextPrestaId, createdAt: new Date().toISOString() }], nextPrestaId: s.nextPrestaId + 1 }))
+    setState(s => {
+      const np: Prestataire = { ...p, id: s.nextPrestaId, createdAt: new Date().toISOString() }
+      savePrestataire(np)
+      return { ...s, prestataires: [...s.prestataires, np], nextPrestaId: s.nextPrestaId + 1 }
+    })
   }, [])
 
   const updatePrestataire = useCallback((updated: Prestataire) => {
-    setState(s => ({ ...s, prestataires: s.prestataires.map(p => p.id === updated.id ? updated : p) }))
+    setState(s => { savePrestataire(updated); return { ...s, prestataires: s.prestataires.map(p => p.id === updated.id ? updated : p) } })
   }, [])
 
   const deletePrestataire = useCallback((id: number) => {
-    setState(s => ({ ...s, prestataires: s.prestataires.filter(p => p.id !== id) }))
+    setState(s => { dbDeletePresta(id); return { ...s, prestataires: s.prestataires.filter(p => p.id !== id) } })
   }, [])
 
   return { state, loaded, addRiad, updateRiad, deleteRiad, setEstimation, addPrestataire, updatePrestataire, deletePrestataire }
