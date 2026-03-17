@@ -34,26 +34,40 @@ export function useAppState() {
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
+
     async function init() {
-      const dbData = await loadFromDB()
-      if (dbData && dbData.riads && dbData.riads.length > 0) {
-        setState(s => ({ ...s, ...dbData }))
-      } else {
-        try {
-          const raw = localStorage.getItem(LS_KEY)
-          if (raw) {
-            const local = JSON.parse(raw) as AppState
-            setState(local)
-            await Promise.all([
-              ...local.riads.map(r => saveRiad(r)),
-              ...(local.prestataires || []).map(p => savePrestataire(p)),
-              saveEstimation(local.estimation),
-            ])
-          }
-        } catch {}
-      }
+      try {
+        // Timeout 4s pour éviter blocage infini
+        const dbData = await Promise.race([
+          loadFromDB(),
+          new Promise<null>(res => setTimeout(() => res(null), 4000))
+        ])
+
+        if (dbData && dbData.riads && (dbData.riads as Riad[]).length > 0) {
+          setState(s => ({ ...s, ...dbData }))
+          try { localStorage.setItem(LS_KEY, JSON.stringify({ ...DEFAULT_STATE, ...dbData })) } catch {}
+        } else {
+          // DB vide — charger depuis localStorage
+          try {
+            const raw = localStorage.getItem(LS_KEY)
+            if (raw) {
+              const local = JSON.parse(raw) as AppState
+              setState(local)
+              // Migrer vers DB en arrière-plan
+              setTimeout(() => {
+                Promise.all([
+                  ...local.riads.map(r => saveRiad(r)),
+                  ...(local.prestataires || []).map(p => savePrestataire(p)),
+                  saveEstimation(local.estimation),
+                ]).catch(() => {})
+              }, 100)
+            }
+          } catch {}
+        }
+      } catch {}
       setLoaded(true)
     }
+
     init()
   }, [])
 
@@ -63,34 +77,27 @@ export function useAppState() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)) } catch {}
   }, [state, loaded])
 
-  const addRiad = useCallback(async (riad: Omit<Riad, 'id' | 'createdAt'>) => {
+  const addRiad = useCallback((riad: Omit<Riad, 'id' | 'createdAt'>) => {
     setState(s => {
-      const newRiad: Riad = { ...riad, id: s.nextId, createdAt: new Date().toISOString() }
-      // Save to DB outside setState
-      setTimeout(() => saveRiad(newRiad), 0)
-      return { ...s, riads: [...s.riads, newRiad], nextId: s.nextId + 1 }
+      const r: Riad = { ...riad, id: s.nextId, createdAt: new Date().toISOString() }
+      setTimeout(() => saveRiad(r), 0)
+      return { ...s, riads: [...s.riads, r], nextId: s.nextId + 1 }
     })
   }, [])
 
-  const updateRiad = useCallback(async (updated: Riad) => {
-    await saveRiad(updated)
-    setState(s => ({ ...s, riads: s.riads.map(r => r.id === updated.id ? updated : r) }))
+  const updateRiad = useCallback((updated: Riad) => {
+    setState(s => { setTimeout(() => saveRiad(updated), 0); return { ...s, riads: s.riads.map(r => r.id === updated.id ? updated : r) } })
   }, [])
 
-  const deleteRiad = useCallback(async (id: number) => {
-    await dbDeleteRiad(id)
-    setState(s => ({ ...s, riads: s.riads.filter(r => r.id !== id) }))
+  const deleteRiad = useCallback((id: number) => {
+    setState(s => { setTimeout(() => dbDeleteRiad(id), 0); return { ...s, riads: s.riads.filter(r => r.id !== id) } })
   }, [])
 
-  const setEstimation = useCallback(async (est: Partial<Estimation>) => {
-    setState(s => {
-      const updated = { ...s.estimation, ...est }
-      setTimeout(() => saveEstimation(updated), 0)
-      return { ...s, estimation: updated }
-    })
+  const setEstimation = useCallback((est: Partial<Estimation>) => {
+    setState(s => { const u = { ...s.estimation, ...est }; setTimeout(() => saveEstimation(u), 0); return { ...s, estimation: u } })
   }, [])
 
-  const addPrestataire = useCallback(async (p: Omit<Prestataire, 'id' | 'createdAt'>) => {
+  const addPrestataire = useCallback((p: Omit<Prestataire, 'id' | 'createdAt'>) => {
     setState(s => {
       const np: Prestataire = { ...p, id: s.nextPrestaId, createdAt: new Date().toISOString() }
       setTimeout(() => savePrestataire(np), 0)
@@ -98,14 +105,12 @@ export function useAppState() {
     })
   }, [])
 
-  const updatePrestataire = useCallback(async (updated: Prestataire) => {
-    await savePrestataire(updated)
-    setState(s => ({ ...s, prestataires: s.prestataires.map(p => p.id === updated.id ? updated : p) }))
+  const updatePrestataire = useCallback((updated: Prestataire) => {
+    setState(s => { setTimeout(() => savePrestataire(updated), 0); return { ...s, prestataires: s.prestataires.map(p => p.id === updated.id ? updated : p) } })
   }, [])
 
-  const deletePrestataire = useCallback(async (id: number) => {
-    await dbDeletePresta(id)
-    setState(s => ({ ...s, prestataires: s.prestataires.filter(p => p.id !== id) }))
+  const deletePrestataire = useCallback((id: number) => {
+    setState(s => { setTimeout(() => dbDeletePresta(id), 0); return { ...s, prestataires: s.prestataires.filter(p => p.id !== id) } })
   }, [])
 
   return { state, loaded, addRiad, updateRiad, deleteRiad, setEstimation, addPrestataire, updatePrestataire, deletePrestataire }

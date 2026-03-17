@@ -1,49 +1,51 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { getSupabase } from './supabase'
 import type { Riad, Prestataire, Estimation, AppState } from '@/types'
 
+async function dbCall(body: object) {
+  const res = await fetch('/api/db', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  return res.json()
+}
+
 export async function loadFromDB(): Promise<Partial<AppState> | null> {
-  const sb = getSupabase()
-  if (!sb) return null
   try {
-    const [riadsRes, prestaRes, estRes] = await Promise.all([
-      sb.from('riads').select('id, data').order('id') as any,
-      sb.from('prestataires').select('id, data').order('id') as any,
-      sb.from('estimation').select('data').eq('id', 1).maybeSingle() as any,
-    ])
-    const riads: Riad[] = (riadsRes.data || []).map((r: any) => ({ ...r.data, id: r.id }))
-    const prestataires: Prestataire[] = (prestaRes.data || []).map((r: any) => ({ ...r.data, id: r.id }))
-    const estimation: Estimation | null = estRes.data?.data ?? null
+    const res = await fetch('/api/db')
+    if (!res.ok) return null
+    const { riads, prestataires, estimation } = await res.json()
     return {
-      riads, prestataires,
+      riads: riads || [],
+      prestataires: prestataires || [],
       estimation: estimation ?? undefined,
-      nextId: riads.reduce((m, r) => Math.max(m, r.id), 0) + 1,
-      nextPrestaId: prestataires.reduce((m, p) => Math.max(m, p.id), 0) + 1,
+      nextId: (riads || []).reduce((m: number, r: Riad) => Math.max(m, r.id), 0) + 1,
+      nextPrestaId: (prestataires || []).reduce((m: number, p: Prestataire) => Math.max(m, p.id), 0) + 1,
     }
   } catch (e) { console.error('loadFromDB:', e); return null }
 }
 
 export async function saveRiad(riad: Riad) {
-  const sb = getSupabase(); if (!sb) return
-  try { const { id, ...data } = riad; await (sb.from('riads') as any).upsert({ id, data }, { onConflict: 'id' }) } catch (e) { console.error('saveRiad:', e) }
+  try {
+    const { id, ...data } = riad
+    await dbCall({ action: 'upsert', table: 'riads', id, data })
+  } catch (e) { console.error('saveRiad:', e) }
 }
 
 export async function deleteRiad(id: number) {
-  const sb = getSupabase(); if (!sb) return
-  try { await sb.from('riads').delete().eq('id', id) } catch {}
+  try { await dbCall({ action: 'delete', table: 'riads', id }) } catch {}
 }
 
 export async function savePrestataire(p: Prestataire) {
-  const sb = getSupabase(); if (!sb) return
-  try { const { id, ...data } = p; await (sb.from('prestataires') as any).upsert({ id, data }, { onConflict: 'id' }) } catch (e) { console.error('savePrestataire:', e) }
+  try {
+    const { id, ...data } = p
+    await dbCall({ action: 'upsert', table: 'prestataires', id, data })
+  } catch (e) { console.error('savePrestataire:', e) }
 }
 
 export async function deletePrestataire(id: number) {
-  const sb = getSupabase(); if (!sb) return
-  try { await sb.from('prestataires').delete().eq('id', id) } catch {}
+  try { await dbCall({ action: 'delete', table: 'prestataires', id }) } catch {}
 }
 
 export async function saveEstimation(est: Estimation) {
-  const sb = getSupabase(); if (!sb) return
-  try { await (sb.from('estimation') as any).upsert({ id: 1, data: est }, { onConflict: 'id' }) } catch (e) { console.error('saveEstimation:', e) }
+  try { await dbCall({ action: 'upsert', table: 'estimation', id: 1, data: est }) } catch (e) { console.error('saveEstimation:', e) }
 }
