@@ -5,12 +5,24 @@ export async function POST(req: NextRequest) {
     const { url } = await req.json()
     if (!url) return NextResponse.json({ error: 'URL manquante' }, { status: 400 })
 
-    const pageRes = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RiadVision/1.0)' },
-    })
-    if (!pageRes.ok) return NextResponse.json({ error: 'Impossible de charger la page' }, { status: 400 })
+    let html: string
+    try {
+      const pageRes = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (!pageRes.ok) {
+        return NextResponse.json({
+          error: pageRes.status === 403
+            ? 'Ce site bloque les imports automatiques — saisissez les données manuellement'
+            : 'Impossible de charger cette page'
+        }, { status: 400 })
+      }
+      html = await pageRes.text()
+    } catch {
+      return NextResponse.json({ error: 'Site inaccessible ou délai dépassé' }, { status: 400 })
+    }
 
-    const html = await pageRes.text()
     const text = html
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -23,19 +35,24 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 1200,
         messages: [{
           role: 'user',
-          content: `Extrait les informations de cette annonce immobilière de riad à Marrakech et retourne UNIQUEMENT un JSON valide sans markdown ni explication.
+          content: `Extrait les informations de cette annonce immobilière à Marrakech. Retourne UNIQUEMENT un JSON valide, sans markdown ni explication.
 
-Texte de l'annonce :
+Texte :
 ${text}
 
-JSON attendu (null si absent) :
+JSON (null si absent) :
 {
-  "nom": "titre de l'annonce",
-  "adresse": "adresse ou derb",
-  "quartier": "Mouassine | Kasbah | Dar El Bacha | Riad Zitoun | Ksour | Bab Doukkala | Mellah | Autre",
+  "nom": "titre annonce",
+  "typeBien": "riad"|"douirya"|"maison_hotes"|"villa"|"appartement"|"autre",
+  "reference": "ref agence",
+  "agenceSource": "nom agence",
+  "adresse": "adresse/derb",
+  "quartier": "Mouassine"|"Kasbah"|"Dar El Bacha"|"Riad Zitoun"|"Ksour"|"Bab Doukkala"|"Mellah"|"Centre médina"|"Autre",
+  "proximite": "ex: 5 min Jemaa el-Fna, tombeaux Saadiens",
+  "vue": "ex: vue Palais Royal, jardins",
   "surface": number|null,
   "niveaux": number|null,
   "chambres": number|null,
@@ -43,10 +60,12 @@ JSON attendu (null si absent) :
   "terrasse": number|null,
   "prixD": number|null,
   "etat": "bon"|"moyen"|"mauvais"|"ruine"|null,
-  "reference": "ref annonce"|null,
   "titre": true|false,
   "meuble": true|false,
   "enActivite": true|false,
+  "piscine": true|false,
+  "bassin": true|false,
+  "clim": true|false,
   "potentiel": "résumé potentiel",
   "notes": "résumé description et points clés"
 }`

@@ -1,12 +1,12 @@
-import type { NiveauRenovation, Statut, Etat, ZonesSurfaces } from '@/types'
+import type { NiveauRenovation, Statut, TypeBien, ZonesSurfaces } from '@/types'
 
 export const EUR_RATE = 11
 
 export const LEVELS: Record<NiveauRenovation, { label: string; min: number; max: number; color: string; bg: string }> = {
-  rafraich: { label: 'Rafraîchissement',     min: 4000,  max: 7000,  color: '#3A7D5C', bg: '#EAF3EC' },
-  standard: { label: 'Rénovation standard',  min: 8000,  max: 14000, color: '#6B6560', bg: '#F0EDE8' },
-  complete: { label: 'Rénovation complète',  min: 16000, max: 24000, color: '#8C5A28', bg: '#F5EDE3' },
-  luxe:     { label: "Luxe / maison d'hôtes",min: 26000, max: 35000, color: '#1A1814', bg: '#EDEAE3' },
+  rafraich: { label: 'Rafraîchissement',      min: 4000,  max: 7000,  color: '#3A7D5C', bg: '#EAF3EC' },
+  standard: { label: 'Rénovation standard',   min: 8000,  max: 14000, color: '#6B6560', bg: '#F0EDE8' },
+  complete: { label: 'Rénovation complète',   min: 16000, max: 24000, color: '#8C5A28', bg: '#F5EDE3' },
+  luxe:     { label: "Luxe / maison d'hôtes", min: 26000, max: 35000, color: '#1A1814', bg: '#EDEAE3' },
 }
 
 export const STATUTS: Record<Statut, { l: string; c: string }> = {
@@ -17,8 +17,17 @@ export const STATUTS: Record<Statut, { l: string; c: string }> = {
   archive:     { l: 'Archivé',     c: '#B0AA9E' },
 }
 
-export const ETATS: Record<Etat, string> = {
-  bon:    'Bon état',
+export const TYPES_BIEN: Record<TypeBien, string> = {
+  riad:         'Riad',
+  douirya:      'Douirya',
+  maison_hotes: "Maison d'hôtes",
+  villa:        'Villa',
+  appartement:  'Appartement',
+  autre:        'Autre',
+}
+
+export const ETATS = {
+  bon:    'Bon état / rénové',
   moyen:  'État moyen',
   mauvais:'Mauvais état',
   ruine:  'À rénover',
@@ -26,7 +35,8 @@ export const ETATS: Record<Etat, string> = {
 
 export const QUARTIERS = [
   '', 'Mouassine', 'Dar El Bacha', 'Kasbah',
-  'Riad Zitoun', 'Ksour', 'Bab Doukkala', 'Mellah', 'Autre'
+  'Riad Zitoun', 'Ksour', 'Bab Doukkala', 'Mellah',
+  'Centre médina', 'Autre'
 ]
 
 export const ZONES: { k: keyof ZonesSurfaces; l: string }[] = [
@@ -73,16 +83,11 @@ export const fmtEUR = (n: number) =>
 
 export const calcPrixM2 = (prix: number | null, surface: number | null) => {
   if (!prix || !surface || surface === 0) return null
-  const mad = Math.round(prix / surface)
-  const eur = Math.round(mad / EUR_RATE)
-  return { mad, eur }
+  return { mad: Math.round(prix / surface), eur: Math.round(prix / surface / EUR_RATE) }
 }
 
 export const calcEstimation = (
-  niveau: NiveauRenovation,
-  surf: number,
-  transf: string[],
-  prixPerso: string
+  niveau: NiveauRenovation, surf: number, transf: string[], prixPerso: string
 ) => {
   const lvl = LEVELS[niveau]
   const pp = prixPerso ? Number(prixPerso) : null
@@ -90,15 +95,6 @@ export const calcEstimation = (
   const pMax = pp ? pp * 1.15 : lvl.max
   const pMoy = pp || Math.round((lvl.min + lvl.max) / 2)
   let extras = 0
-  transf.forEach((k) => {
-    const t = TRANSFORMATIONS.find((x) => x.k === k)
-    if (t) extras += t.f
-  })
-  return {
-    surf, pMin, pMax, pMoy,
-    tMin: surf * pMin + extras,
-    tMax: surf * pMax + extras,
-    total: surf * pMoy + extras,
-    extras, lvl,
-  }
+  transf.forEach(k => { const t = TRANSFORMATIONS.find(x => x.k === k); if (t) extras += t.f })
+  return { surf, pMin, pMax, pMoy, tMin: surf * pMin + extras, tMax: surf * pMax + extras, total: surf * pMoy + extras, extras, lvl }
 }
