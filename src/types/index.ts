@@ -10,13 +10,22 @@ export interface Riad {
   quartier: string
   surface: number | null
   niveaux: number | null
+  chambres: number | null
+  sdb: number | null
+  terrasse: number | null
   etat: Etat | ''
-  prixD: number | null  // prix demandé en MAD
-  prixN: number | null  // prix négocié en MAD
+  prixD: number | null
+  prixN: number | null
   statut: Statut | ''
   potentiel: string
   contraintes: string
   notes: string
+  // Nouveaux champs
+  reference: string
+  lienSource: string
+  titre: boolean
+  meuble: boolean
+  enActivite: boolean
   createdAt: string
 }
 
