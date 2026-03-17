@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { Prestataire, TarifPrestataire, SpecialitePrestataire } from '@/types'
-import { SPECIALITES, FIABILITE_LABELS, fmtMAD } from '@/lib/constants'
+import { SPECIALITES, FIABILITE_LABELS, fmtMAD, LIBELLES_TRAVAUX } from '@/lib/constants'
 import { Card, SectionLabel, Divider, PageHeader, Btn, FieldInput, FieldSelect, Chip } from '@/components/ui'
 
 const EMPTY_PRESTA: Omit<Prestataire, 'id' | 'createdAt'> = {
@@ -112,8 +112,18 @@ function PrestataireFiche({ initial, onSave, onCancel }: {
           {p.tarifs.map(t => (
             <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 10, alignItems: 'flex-end', marginBottom: 10, padding: '12px', background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--line)' }}>
               <div>
-                <div className="label">Libellé</div>
-                <input className="field-input" value={t.label} onChange={e => updateTarif(t.id, 'label', e.target.value)} placeholder="Rénovation complète, Escalier, Bassin…" />
+                <div className="label">Prestation</div>
+                <select className="field-input" value={t.label} onChange={e => {
+                  const found = LIBELLES_TRAVAUX.find(l => l.label === e.target.value)
+                  updateTarif(t.id, 'label', e.target.value)
+                  if (found && e.target.value !== 'Autre (libellé libre)') updateTarif(t.id, 'type', found.type)
+                }}>
+                  <option value="">— Choisir une prestation —</option>
+                  {LIBELLES_TRAVAUX.map(l => <option key={l.label} value={l.label}>{l.label}</option>)}
+                </select>
+                {t.label === 'Autre (libellé libre)' && (
+                  <input className="field-input" style={{ marginTop: 6 }} value={t.notes || ''} onChange={e => updateTarif(t.id, 'notes', e.target.value)} placeholder="Précisez le libellé…" />
+                )}
               </div>
               <div>
                 <div className="label">Type</div>

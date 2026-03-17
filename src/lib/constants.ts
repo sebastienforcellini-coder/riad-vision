@@ -120,3 +120,37 @@ export const FIABILITE_LABELS = {
   moyen:       { l: 'Moyen',        c: '#BA7517' },
   deconseille: { l: 'Déconseillé', c: '#C0392B' },
 }
+
+// ── LIBELLÉS TRAVAUX (grille tarifaire prestataires) ──────────────────────
+export const LIBELLES_TRAVAUX = [
+  // Au m²
+  { label: 'Rénovation complète au m²',        type: 'm2'      as const },
+  { label: 'Rafraîchissement au m²',           type: 'm2'      as const },
+  { label: 'Maçonnerie / Gros œuvre au m²',    type: 'm2'      as const },
+  { label: 'Carrelage / Sol au m²',            type: 'm2'      as const },
+  { label: 'Zellige au m²',                    type: 'm2'      as const },
+  { label: 'Tadelakt au m²',                   type: 'm2'      as const },
+  { label: 'Peinture au m²',                   type: 'm2'      as const },
+  { label: 'Plomberie au m²',                  type: 'm2'      as const },
+  { label: 'Électricité au m²',                type: 'm2'      as const },
+  { label: 'Climatisation au m²',              type: 'm2'      as const },
+  // Forfaits
+  { label: 'Escalier (forfait)',               type: 'forfait' as const },
+  { label: 'Bassin (forfait)',                 type: 'forfait' as const },
+  { label: 'Piscine patio (forfait)',          type: 'forfait' as const },
+  { label: 'Piscine terrasse (forfait)',       type: 'forfait' as const },
+  { label: 'Verrière patio (forfait)',         type: 'forfait' as const },
+  { label: 'Rooftop aménagé (forfait)',        type: 'forfait' as const },
+  { label: 'Hammam (forfait)',                 type: 'forfait' as const },
+  { label: 'Surélévation / Nouveau niveau',    type: 'forfait' as const },
+  { label: 'Pergola (forfait)',                type: 'forfait' as const },
+  { label: 'Cuisine équipée (forfait)',        type: 'forfait' as const },
+  { label: 'Salle de bain complète (forfait)', type: 'forfait' as const },
+  { label: 'Porte / Menuiserie bois (forfait)',type: 'forfait' as const },
+  { label: 'Tableau électrique (forfait)',     type: 'forfait' as const },
+  // À l'unité
+  { label: 'Radiateur / Split clim (unité)',   type: 'unite'   as const },
+  { label: 'Point luminaire (unité)',          type: 'unite'   as const },
+  { label: 'Sanitaires / WC (unité)',          type: 'unite'   as const },
+  { label: 'Autre (libellé libre)',            type: 'm2'      as const },
+]

@@ -13,7 +13,7 @@ const DEMO_RIADS: Riad[] = [
   {
     id: 1, nom: 'Riad Almas', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
     adresse: 'Derb Sidi Bouamar', quartier: 'Mouassine', proximite: '5 min Jemaa el-Fna', vue: '',
-    surface: 280, niveaux: 3, chambres: 6, sdb: 6, terrasse: 40,
+    surface: 280, niveaux: 3, chambres: 6, sdb: 6, terrasse: 40, terrasse2: null, terrasse3: null,
     etat: 'moyen', prixD: 9240000, prixN: 8400000, statut: 'negociation',
     titre: true, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false,
     potentiel: "Maison d'hôtes — 8 chambres", contraintes: 'Plomberie à refaire',
@@ -23,7 +23,7 @@ const DEMO_RIADS: Riad[] = [
   {
     id: 2, nom: 'Riad El Bahja', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
     adresse: 'Derb Chorfa Lakbir', quartier: 'Bab Doukkala', proximite: '', vue: '',
-    surface: 180, niveaux: 2, chambres: 4, sdb: 4, terrasse: 20,
+    surface: 180, niveaux: 2, chambres: 4, sdb: 4, terrasse: 20, terrasse2: null, terrasse3: null,
     etat: 'bon', prixD: 6600000, prixN: 5940000, statut: 'proposition',
     titre: true, meuble: true, enActivite: false, piscine: false, bassin: true, clim: true,
     potentiel: 'Résidence principale — 4 chambres', contraintes: 'R+2 max',
@@ -32,7 +32,7 @@ const DEMO_RIADS: Riad[] = [
   {
     id: 3, nom: 'Riad Dar Salam', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '',
     adresse: 'Rue Bab Taghzout', quartier: 'Kasbah', proximite: '', vue: 'Vue sur les toits',
-    surface: 350, niveaux: 4, chambres: null, sdb: null, terrasse: null,
+    surface: 350, niveaux: 4, chambres: null, sdb: null, terrasse: null, terrasse2: null, terrasse3: null,
     etat: 'mauvais', prixD: null, prixN: null, statut: 'visite',
     titre: false, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false,
     potentiel: 'Grand projet — 12 chambres', contraintes: 'Toiture à reprendre',

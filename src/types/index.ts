@@ -20,7 +20,9 @@ export interface Riad {
   niveaux: number | null
   chambres: number | null
   sdb: number | null
-  terrasse: number | null
+  terrasse: number | null       // terrasse principale
+  terrasse2: number | null      // 2ème terrasse / rooftop
+  terrasse3: number | null      // 3ème niveau terrasse
   etat: Etat | ''
   titre: boolean
   meuble: boolean

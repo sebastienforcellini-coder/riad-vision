@@ -200,6 +200,8 @@ export function RiadFiche({ initial, onSave, onCancel }: {
               <FieldInput label="Chambres" value={r.chambres} onChange={v => set('chambres', v ? Number(v) : null)} type="number" placeholder="4" />
               <FieldInput label="Salles de bain" value={r.sdb} onChange={v => set('sdb', v ? Number(v) : null)} type="number" placeholder="4" />
               <FieldInput label="Terrasse / Rooftop (m²)" value={r.terrasse} onChange={v => set('terrasse', v ? Number(v) : null)} type="number" placeholder="25" />
+              <FieldInput label="2ème terrasse / niveau (m²)" value={r.terrasse2} onChange={v => set('terrasse2', v ? Number(v) : null)} type="number" placeholder="—" />
+              <FieldInput label="3ème terrasse / niveau (m²)" value={r.terrasse3} onChange={v => set('terrasse3', v ? Number(v) : null)} type="number" placeholder="—" />
             </div>
             <Divider />
             <SectionLabel>Prix — après mandat</SectionLabel>
