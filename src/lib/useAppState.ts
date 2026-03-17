@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import type { AppState, Riad, Estimation, ZonesSurfaces } from '@/types'
+import type { AppState, Riad, Estimation, Prestataire, TarifPrestataire, ZonesSurfaces } from '@/types'
 
-const STORAGE_KEY = 'riad-vision-v4'
+const STORAGE_KEY = 'riad-vision-v5'
 
 const DEFAULT_ZONES: ZonesSurfaces = {
   patio: 0, salon: 0, cuisine: 0, chambres: 0, sdb: 0,
@@ -46,10 +46,16 @@ const DEFAULT_ESTIMATION: Estimation = {
   zones: { ...DEFAULT_ZONES }, transf: [], prixPerso: '',
 }
 
+const DEFAULT_STATE: AppState = {
+  riads: DEMO_RIADS,
+  estimation: DEFAULT_ESTIMATION,
+  prestataires: [],
+  nextId: 4,
+  nextPrestaId: 1,
+}
+
 export function useAppState() {
-  const [state, setState] = useState<AppState>({
-    riads: DEMO_RIADS, estimation: DEFAULT_ESTIMATION, nextId: 4,
-  })
+  const [state, setState] = useState<AppState>(DEFAULT_STATE)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -78,5 +84,17 @@ export function useAppState() {
     setState(s => ({ ...s, estimation: { ...s.estimation, ...est } }))
   }, [])
 
-  return { state, loaded, addRiad, updateRiad, deleteRiad, setEstimation }
+  const addPrestataire = useCallback((p: Omit<Prestataire, 'id' | 'createdAt'>) => {
+    setState(s => ({ ...s, prestataires: [...s.prestataires, { ...p, id: s.nextPrestaId, createdAt: new Date().toISOString() }], nextPrestaId: s.nextPrestaId + 1 }))
+  }, [])
+
+  const updatePrestataire = useCallback((updated: Prestataire) => {
+    setState(s => ({ ...s, prestataires: s.prestataires.map(p => p.id === updated.id ? updated : p) }))
+  }, [])
+
+  const deletePrestataire = useCallback((id: number) => {
+    setState(s => ({ ...s, prestataires: s.prestataires.filter(p => p.id !== id) }))
+  }, [])
+
+  return { state, loaded, addRiad, updateRiad, deleteRiad, setEstimation, addPrestataire, updatePrestataire, deletePrestataire }
 }

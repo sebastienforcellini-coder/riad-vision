@@ -1,4 +1,4 @@
-import type { NiveauRenovation, Statut, TypeBien, ZonesSurfaces } from '@/types'
+import type { NiveauRenovation, Statut, TypeBien, ZonesSurfaces, SpecialitePrestataire } from '@/types'
 
 export const EUR_RATE = 11
 
@@ -98,4 +98,25 @@ export const calcEstimation = (
   let extras = 0
   transf.forEach(k => { const t = TRANSFORMATIONS.find(x => x.k === k); if (t) extras += t.f })
   return { surf, pMin, pMax, pMoy, tMin: surf * pMin + extras, tMax: surf * pMax + extras, total: surf * pMoy + extras, extras, lvl }
+}
+
+// ── PRESTATAIRES ──────────────────────────────────────────────────────────
+
+export const SPECIALITES: Record<SpecialitePrestataire, { label: string; color: string }> = {
+  moe:        { label: "Maître d'œuvre général", color: '#1A1814' },
+  maconnerie: { label: 'Maçonnerie / Structure',  color: '#8C5A28' },
+  plomberie:  { label: 'Plomberie',               color: '#185FA5' },
+  electricite:{ label: 'Électricité',             color: '#BA7517' },
+  menuiserie: { label: 'Menuiserie / Zellige',    color: '#3A7D5C' },
+  peinture:   { label: 'Peinture / Tadelakt',     color: '#993556' },
+  piscine:    { label: 'Piscine / Bassin',        color: '#0F6E56' },
+  clim:       { label: 'Climatisation',           color: '#534AB7' },
+  autre:      { label: 'Autre',                   color: '#6B6560' },
+}
+
+export const FIABILITE_LABELS = {
+  excellent:   { l: 'Excellent',    c: '#3A7D5C' },
+  bon:         { l: 'Bon',          c: '#639922' },
+  moyen:       { l: 'Moyen',        c: '#BA7517' },
+  deconseille: { l: 'Déconseillé', c: '#C0392B' },
 }

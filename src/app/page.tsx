@@ -4,13 +4,15 @@ import { useAppState } from '@/lib/useAppState'
 import Sidebar from '@/components/Sidebar'
 import Dashboard from '@/components/Dashboard'
 import { RiadsList, RiadFiche, Estimateur, Resultats, Presentation } from '@/components/views'
+import Prestataires from '@/components/Prestataires'
 import type { Riad } from '@/types'
 
-export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation'
+export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires'
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Accueil', riads: 'Mes Riads', fiche: 'Fiche Riad',
   estimateur: 'Estimateur', resultats: 'Résultats', presentation: 'Présentation',
+  prestataires: 'Prestataires',
 }
 
 export default function HomePage() {
@@ -19,6 +21,7 @@ export default function HomePage() {
   const [editRiad, setEditRiad] = useState<Partial<Riad> | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
+  const [confirmDeletePresta, setConfirmDeletePresta] = useState<number | null>(null)
 
   const navigate = (v: View, opts?: { riad?: Partial<Riad> }) => {
     if (opts?.riad !== undefined) setEditRiad(opts.riad)
@@ -33,14 +36,6 @@ export default function HomePage() {
   const startPresentation = (riad: Riad) => {
     app.setEstimation({ riadId: riad.id, surface: riad.surface ?? app.state.estimation.surface })
     navigate('presentation')
-  }
-
-  const handleDelete = (id: number) => {
-    setConfirmDelete(id)
-  }
-
-  const confirmDeleteRiad = () => {
-    if (confirmDelete) { app.deleteRiad(confirmDelete); setConfirmDelete(null) }
   }
 
   if (!app.loaded) {
@@ -66,15 +61,29 @@ export default function HomePage() {
         <Sidebar currentView={view} onNavigate={navigate} />
       </div>
 
-      {/* Delete confirmation modal */}
+      {/* Delete riad modal */}
       {confirmDelete && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,24,20,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--white)', borderRadius: 10, padding: 28, maxWidth: 360, width: '90%', border: '1px solid var(--line)' }}>
             <div className="serif" style={{ fontSize: 20, fontStyle: 'italic', fontWeight: 300, marginBottom: 10 }}>Supprimer ce riad ?</div>
             <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Cette action est irréversible.</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '10px', borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
-              <button onClick={confirmDeleteRiad} style={{ flex: 1, padding: '10px', borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+              <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
+              <button onClick={() => { app.deleteRiad(confirmDelete); setConfirmDelete(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete prestataire modal */}
+      {confirmDeletePresta && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,24,20,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--white)', borderRadius: 10, padding: 28, maxWidth: 360, width: '90%', border: '1px solid var(--line)' }}>
+            <div className="serif" style={{ fontSize: 20, fontStyle: 'italic', fontWeight: 300, marginBottom: 10 }}>Supprimer ce prestataire ?</div>
+            <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Ses tarifs seront perdus.</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setConfirmDeletePresta(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
+              <button onClick={() => { app.deletePrestataire(confirmDeletePresta); setConfirmDeletePresta(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
             </div>
           </div>
         </div>
@@ -93,7 +102,7 @@ export default function HomePage() {
               onEdit={r => navigate('fiche', { riad: r })}
               onEstimate={startEstimate}
               onPresent={startPresentation}
-              onDelete={handleDelete}
+              onDelete={id => setConfirmDelete(id)}
             />
           )}
           {view === 'fiche' && (
@@ -111,6 +120,14 @@ export default function HomePage() {
           )}
           {view === 'presentation' && (
             <Presentation estimation={app.state.estimation} riads={app.state.riads} onBack={() => navigate('resultats')} />
+          )}
+          {view === 'prestataires' && (
+            <Prestataires
+              prestataires={app.state.prestataires}
+              onAdd={app.addPrestataire}
+              onEdit={app.updatePrestataire}
+              onDelete={id => setConfirmDeletePresta(id)}
+            />
           )}
         </main>
       </div>
