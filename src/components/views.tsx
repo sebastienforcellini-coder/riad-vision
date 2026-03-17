@@ -2,11 +2,10 @@
 import { useState } from 'react'
 import type { Riad, Estimation } from '@/types'
 import {
-  LEVELS, STATUTS, ETATS, ZONES, TRANSFORMATIONS, QUARTIERS,
-  fmtM, fmtMAD, fmtEUR, calcEstimation,
+  LEVELS, ETATS, ZONES, TRANSFORMATIONS, QUARTIERS,
+  fmtM, fmtMAD, fmtEUR, calcEstimation, STATUTS,
 } from '@/lib/constants'
-import { Card, SectionLabel, Divider, StatutChip, FieldInput, FieldSelect, StatRow, PrixM2Block, PageHeader, Btn, Chip } from './ui'
-
+import { Card, SectionLabel, Divider, StatutChip, FieldInput, FieldSelect, StatRow, PrixM2Block, PageHeader, Btn, Chip } from '@/components/ui'
 export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
   riads: Riad[]; onNew: () => void
   onEdit: (r: Riad) => void; onEstimate: (r: Riad) => void
@@ -23,15 +22,24 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate }: {
             <Card key={r.id} style={{ padding: '16px 20px' }}>
               <div className="riad-card-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                     <span className="serif" style={{ fontSize: 18, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300 }}>{r.nom}</span>
                     <StatutChip statut={r.statut} />
+                    {r.titre && <Chip text="Titré" color="var(--green)" />}
+                    {r.enActivite && <Chip text="En activité" color="var(--accent)" />}
+                    {r.meuble && <Chip text="Meublé" color="var(--mid)" />}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--soft)', marginBottom: 8 }}>
                     {r.quartier ? r.quartier + ' — ' : ''}{r.adresse || 'Adresse à renseigner'}
+                    {r.reference ? <span style={{ marginLeft: 8, color: 'var(--soft)', fontSize: 11 }}>· Réf. {r.reference}</span> : ''}
                   </div>
                   <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                    {[(r.surface ?? '—') + ' m²', (r.niveaux ?? '—') + ' niveaux', r.etat ? ETATS[r.etat] : 'État à préciser'].map(t => (
+                    {[
+                      r.surface ? r.surface + ' m²' : null,
+                      r.niveaux ? r.niveaux + ' niveaux' : null,
+                      r.chambres ? r.chambres + ' ch.' : null,
+                      r.etat ? ETATS[r.etat] : null,
+                    ].filter(Boolean).map(t => (
                       <span key={t} style={{ fontSize: 12, color: 'var(--mid)' }}>{t}</span>
                     ))}
                   </div>
@@ -66,10 +74,58 @@ export function RiadFiche({ initial, onSave, onCancel }: {
   initial: Partial<Riad> | null; onSave: (r: Partial<Riad>) => void; onCancel: () => void
 }) {
   const [r, setR] = useState<Partial<Riad>>(initial ?? {})
+  const [importUrl, setImportUrl] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [importMsg, setImportMsg] = useState('')
   const isNew = !r.id
   const set = (k: keyof Riad, v: unknown) => setR(prev => ({ ...prev, [k]: v }))
   const prix = r.prixN ?? r.prixD ?? null
   const surf = r.surface ?? null
+
+  const handleImport = async () => {
+    if (!importUrl) return
+    setImporting(true)
+    setImportMsg('')
+    try {
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: importUrl }),
+      })
+      const json = await res.json()
+      if (json.ok && json.data) {
+        const d = json.data
+        setR(prev => ({
+          ...prev,
+          nom: d.nom || prev.nom,
+          adresse: d.adresse || prev.adresse,
+          quartier: d.quartier || prev.quartier,
+          surface: d.surface ?? prev.surface,
+          niveaux: d.niveaux ?? prev.niveaux,
+          chambres: d.chambres ?? prev.chambres,
+          sdb: d.sdb ?? prev.sdb,
+          terrasse: d.terrasse ?? prev.terrasse,
+          prixD: d.prixD ?? prev.prixD,
+          etat: d.etat || prev.etat,
+          reference: d.reference || prev.reference,
+          titre: d.titre ?? prev.titre,
+          meuble: d.meuble ?? prev.meuble,
+          enActivite: d.enActivite ?? prev.enActivite,
+          potentiel: d.potentiel || prev.potentiel,
+          notes: d.notes || prev.notes,
+          lienSource: importUrl,
+        }))
+        setImportMsg('✓ Fiche pré-remplie — vérifiez et ajustez les données')
+      } else {
+        setImportMsg('Impossible d\'importer cette annonce')
+      }
+    } catch {
+      setImportMsg('Erreur de connexion')
+    }
+    setImporting(false)
+  }
+
+  const toggle = (k: keyof Riad) => setR(prev => ({ ...prev, [k]: !prev[k as keyof typeof prev] }))
 
   return (
     <div>
@@ -83,17 +139,70 @@ export function RiadFiche({ initial, onSave, onCancel }: {
           </div>
         }
       />
+
+      {/* Import par lien */}
+      <Card style={{ marginBottom: 16, padding: '16px 20px' }}>
+        <div style={{ fontSize: 12, color: 'var(--mid)', marginBottom: 12 }}>Importer depuis une annonce</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            className="field-input"
+            type="url"
+            value={importUrl}
+            onChange={e => setImportUrl(e.target.value)}
+            placeholder="https://cotemedina.com/... ou autre site d'annonce"
+            style={{ flex: 1 }}
+          />
+          <button
+            onClick={handleImport}
+            disabled={importing || !importUrl}
+            style={{
+              padding: '9px 18px', borderRadius: 6, fontSize: 12, cursor: importing ? 'wait' : 'pointer',
+              background: importing ? 'var(--bg)' : 'var(--text)', color: importing ? 'var(--mid)' : 'var(--white)',
+              border: '1px solid var(--line2)', whiteSpace: 'nowrap', transition: 'opacity 0.15s',
+              opacity: !importUrl ? 0.4 : 1,
+            }}
+          >
+            {importing ? 'Import...' : 'Importer'}
+          </button>
+        </div>
+        {importMsg && (
+          <div style={{
+            marginTop: 8, fontSize: 12, padding: '8px 12px', borderRadius: 6,
+            background: importMsg.startsWith('✓') ? 'var(--green-bg)' : '#fdf0ef',
+            color: importMsg.startsWith('✓') ? 'var(--green)' : 'var(--red, #C0392B)',
+            border: `1px solid ${importMsg.startsWith('✓') ? 'rgba(58,125,92,0.2)' : '#f0b8b5'}`,
+          }}>
+            {importMsg}
+          </div>
+        )}
+      </Card>
+
       <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Card>
           <SectionLabel>Identification</SectionLabel>
           <FieldInput label="Nom du riad" value={r.nom} onChange={v => set('nom', v)} placeholder="Riad Almas…" />
+          <FieldInput label="Référence annonce" value={r.reference} onChange={v => set('reference', v)} placeholder="RR2171…" />
           <FieldInput label="Adresse" value={r.adresse} onChange={v => set('adresse', v)} placeholder="Derb Sidi Bouamar…" />
           <FieldSelect label="Quartier" value={r.quartier ?? ''} onChange={v => set('quartier', v)}
             options={QUARTIERS.map(q => [q, q || '— Quartier —'])} />
           <FieldSelect label="Statut" value={r.statut ?? ''} onChange={v => set('statut', v)}
             options={[['', '— Statut —'], ['visite', 'Visite planifiée'], ['negociation', 'En négociation'], ['proposition', 'Proposition envoyée'], ['signe', 'Signé'], ['archive', 'Archivé']]} />
           <FieldSelect label="État du bien" value={r.etat ?? ''} onChange={v => set('etat', v)}
-            options={[['', '— État —'], ['bon', 'Bon état'], ['moyen', 'État moyen'], ['mauvais', 'Mauvais état'], ['ruine', 'À rénover']]} />
+            options={[['', '— État —'], ['bon', 'Bon état / rénové'], ['moyen', 'État moyen'], ['mauvais', 'Mauvais état'], ['ruine', 'À rénover']]} />
+
+          {/* Checkboxes */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+            {([['titre', 'Titré'], ['meuble', 'Meublé / équipé'], ['enActivite', 'En activité']] as const).map(([k, l]) => (
+              <button key={k} onClick={() => toggle(k)} style={{
+                padding: '6px 12px', borderRadius: 20, fontSize: 11, cursor: 'pointer',
+                background: r[k] ? 'var(--green-bg)' : 'var(--bg)',
+                color: r[k] ? 'var(--green)' : 'var(--soft)',
+                border: `1px solid ${r[k] ? 'rgba(58,125,92,0.3)' : 'var(--line)'}`,
+              }}>
+                {r[k] ? '✓ ' : ''}{l}
+              </button>
+            ))}
+          </div>
         </Card>
 
         <Card>
@@ -101,6 +210,9 @@ export function RiadFiche({ initial, onSave, onCancel }: {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <FieldInput label="Surface au sol (m²)" value={r.surface} onChange={v => set('surface', v ? Number(v) : null)} type="number" placeholder="280" />
             <FieldInput label="Niveaux" value={r.niveaux} onChange={v => set('niveaux', v ? Number(v) : null)} type="number" placeholder="3" />
+            <FieldInput label="Chambres" value={r.chambres} onChange={v => set('chambres', v ? Number(v) : null)} type="number" placeholder="4" />
+            <FieldInput label="Salles de bain" value={r.sdb} onChange={v => set('sdb', v ? Number(v) : null)} type="number" placeholder="4" />
+            <FieldInput label="Terrasse (m²)" value={r.terrasse} onChange={v => set('terrasse', v ? Number(v) : null)} type="number" placeholder="25" />
           </div>
           <Divider />
           <SectionLabel>Prix — après mandat</SectionLabel>
@@ -128,7 +240,16 @@ export function RiadFiche({ initial, onSave, onCancel }: {
         <Card>
           <SectionLabel>Notes</SectionLabel>
           <textarea className="field-input" value={r.notes ?? ''} onChange={e => set('notes', e.target.value)}
-            placeholder="Observations, points forts, contexte vendeur…" style={{ height: 130, resize: 'vertical' }} />
+            placeholder="Observations, points forts, contexte vendeur…" style={{ height: 90, resize: 'vertical' }} />
+          {r.lienSource && (
+            <div style={{ marginTop: 12 }}>
+              <div className="label">Lien source</div>
+              <a href={r.lienSource} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 11, color: 'var(--accent)', wordBreak: 'break-all' }}>
+                {r.lienSource}
+              </a>
+            </div>
+          )}
         </Card>
       </div>
     </div>
@@ -375,25 +496,18 @@ export function Resultats({ estimation, riads, onBack, onRiads }: {
                 {riad.quartier ? riad.quartier + ' — ' : ''}{riad.adresse}
               </div>
               {riad.potentiel && <div style={{ fontSize: 12, color: 'var(--mid)', fontStyle: 'italic', marginBottom: 12 }}>{riad.potentiel}</div>}
-              <div style={{ display: 'flex', gap: 20, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                <div>
-                  <div style={{ fontSize: 10, color: 'var(--soft)' }}>Surface</div>
-                  <div style={{ fontSize: 13, marginTop: 2 }}>{(riad.surface ?? '—') + ' m²'}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 10, color: 'var(--soft)' }}>Prix</div>
-                  <div style={{ fontSize: 13, color: (riad.prixN ?? riad.prixD) ? 'var(--accent)' : 'var(--soft)', marginTop: 2 }}>
-                    {fmtM(riad.prixN ?? riad.prixD)}
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                {[
+                  riad.surface ? [riad.surface + ' m²', 'Surface'] : null,
+                  riad.chambres ? [riad.chambres + ' ch.', 'Chambres'] : null,
+                  (riad.prixN ?? riad.prixD) ? [fmtM(riad.prixN ?? riad.prixD), 'Prix'] : null,
+                  (riad.prixN ?? riad.prixD) && riad.surface ? [new Intl.NumberFormat('fr-MA').format(Math.round((riad.prixN ?? riad.prixD)! / riad.surface)) + ' MAD', 'Au m²'] : null,
+                ].filter((x): x is [string, string] => x !== null).map(([v, l]) => (
+                  <div key={l as string}>
+                    <div style={{ fontSize: 10, color: 'var(--soft)' }}>{l}</div>
+                    <div style={{ fontSize: 13, marginTop: 2 }}>{v}</div>
                   </div>
-                </div>
-                {(riad.prixN ?? riad.prixD) && riad.surface ? (
-                  <div>
-                    <div style={{ fontSize: 10, color: 'var(--soft)' }}>Au m²</div>
-                    <div style={{ fontSize: 13, marginTop: 2 }}>
-                      {new Intl.NumberFormat('fr-MA').format(Math.round((riad.prixN ?? riad.prixD)! / riad.surface))} MAD
-                    </div>
-                  </div>
-                ) : null}
+                ))}
               </div>
             </Card>
           )}
