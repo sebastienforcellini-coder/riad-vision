@@ -34,21 +34,16 @@ export function useAppState() {
   useEffect(() => {
     if (initialized.current) return
     initialized.current = true
-
     async function init() {
       const dbData = await loadFromDB()
-
       if (dbData && dbData.riads && dbData.riads.length > 0) {
         setState(s => ({ ...s, ...dbData }))
-        try { localStorage.setItem(LS_KEY, JSON.stringify({ ...DEFAULT_STATE, ...dbData })) } catch {}
       } else {
-        // Try localStorage migration
         try {
           const raw = localStorage.getItem(LS_KEY)
           if (raw) {
             const local = JSON.parse(raw) as AppState
             setState(local)
-            // Migrate to DB
             await Promise.all([
               ...local.riads.map(r => saveRiad(r)),
               ...(local.prestataires || []).map(p => savePrestataire(p)),
@@ -59,50 +54,58 @@ export function useAppState() {
       }
       setLoaded(true)
     }
-
     init()
   }, [])
 
-  // localStorage backup on every change
+  // localStorage backup
   useEffect(() => {
     if (!loaded) return
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)) } catch {}
   }, [state, loaded])
 
-  const addRiad = useCallback((riad: Omit<Riad, 'id' | 'createdAt'>) => {
+  const addRiad = useCallback(async (riad: Omit<Riad, 'id' | 'createdAt'>) => {
     setState(s => {
-      const r: Riad = { ...riad, id: s.nextId, createdAt: new Date().toISOString() }
-      saveRiad(r)
-      return { ...s, riads: [...s.riads, r], nextId: s.nextId + 1 }
+      const newRiad: Riad = { ...riad, id: s.nextId, createdAt: new Date().toISOString() }
+      // Save to DB outside setState
+      setTimeout(() => saveRiad(newRiad), 0)
+      return { ...s, riads: [...s.riads, newRiad], nextId: s.nextId + 1 }
     })
   }, [])
 
-  const updateRiad = useCallback((updated: Riad) => {
-    setState(s => { saveRiad(updated); return { ...s, riads: s.riads.map(r => r.id === updated.id ? updated : r) } })
+  const updateRiad = useCallback(async (updated: Riad) => {
+    await saveRiad(updated)
+    setState(s => ({ ...s, riads: s.riads.map(r => r.id === updated.id ? updated : r) }))
   }, [])
 
-  const deleteRiad = useCallback((id: number) => {
-    setState(s => { dbDeleteRiad(id); return { ...s, riads: s.riads.filter(r => r.id !== id) } })
+  const deleteRiad = useCallback(async (id: number) => {
+    await dbDeleteRiad(id)
+    setState(s => ({ ...s, riads: s.riads.filter(r => r.id !== id) }))
   }, [])
 
-  const setEstimation = useCallback((est: Partial<Estimation>) => {
-    setState(s => { const u = { ...s.estimation, ...est }; saveEstimation(u); return { ...s, estimation: u } })
+  const setEstimation = useCallback(async (est: Partial<Estimation>) => {
+    setState(s => {
+      const updated = { ...s.estimation, ...est }
+      setTimeout(() => saveEstimation(updated), 0)
+      return { ...s, estimation: updated }
+    })
   }, [])
 
-  const addPrestataire = useCallback((p: Omit<Prestataire, 'id' | 'createdAt'>) => {
+  const addPrestataire = useCallback(async (p: Omit<Prestataire, 'id' | 'createdAt'>) => {
     setState(s => {
       const np: Prestataire = { ...p, id: s.nextPrestaId, createdAt: new Date().toISOString() }
-      savePrestataire(np)
+      setTimeout(() => savePrestataire(np), 0)
       return { ...s, prestataires: [...s.prestataires, np], nextPrestaId: s.nextPrestaId + 1 }
     })
   }, [])
 
-  const updatePrestataire = useCallback((updated: Prestataire) => {
-    setState(s => { savePrestataire(updated); return { ...s, prestataires: s.prestataires.map(p => p.id === updated.id ? updated : p) } })
+  const updatePrestataire = useCallback(async (updated: Prestataire) => {
+    await savePrestataire(updated)
+    setState(s => ({ ...s, prestataires: s.prestataires.map(p => p.id === updated.id ? updated : p) }))
   }, [])
 
-  const deletePrestataire = useCallback((id: number) => {
-    setState(s => { dbDeletePresta(id); return { ...s, prestataires: s.prestataires.filter(p => p.id !== id) } })
+  const deletePrestataire = useCallback(async (id: number) => {
+    await dbDeletePresta(id)
+    setState(s => ({ ...s, prestataires: s.prestataires.filter(p => p.id !== id) }))
   }, [])
 
   return { state, loaded, addRiad, updateRiad, deleteRiad, setEstimation, addPrestataire, updatePrestataire, deletePrestataire }
