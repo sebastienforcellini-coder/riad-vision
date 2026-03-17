@@ -1,5 +1,5 @@
 export type Statut = 'visite' | 'negociation' | 'proposition' | 'signe' | 'archive'
-export type Etat = 'bon' | 'moyen' | 'mauvais' | 'ruine'
+export type Etat = 'tres_bon' | 'bon' | 'moyen' | 'mauvais' | 'ruine'
 export type TypeBien = 'riad' | 'douirya' | 'maison_hotes' | 'villa' | 'appartement' | 'autre'
 export type NiveauRenovation = 'rafraich' | 'standard' | 'complete' | 'luxe'
 export type ModeEstimation = 'rapide' | 'detaille'

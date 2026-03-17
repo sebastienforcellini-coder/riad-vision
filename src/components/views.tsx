@@ -155,14 +155,25 @@ export function RiadFiche({ initial, onSave, onCancel }: {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <FieldInput label="Référence agence" value={r.reference} onChange={v => set('reference', v)} placeholder="RR2171" />
-            <FieldInput label="Agence source" value={r.agenceSource} onChange={v => set('agenceSource', v)} placeholder="Côté Médina…" />
+          <div style={{ marginBottom: 16 }}>
+            <div className="label">Agence source</div>
+            <input className="field-input" list="agences-list" value={r.agenceSource ?? ''} onChange={e => set('agenceSource', e.target.value)} placeholder="Côté Médina, Direct Propriétaire…" />
+            <datalist id="agences-list">
+              <option value="Direct Propriétaire" />
+              <option value="Côté Médina" />
+              <option value="Barnes Marrakech" />
+              <option value="MarrakechRealty" />
+              <option value="Mubawab" />
+              <option value="Avito Maroc" />
+            </datalist>
+          </div>
           </div>
           <FieldInput label="Adresse / Derb" value={r.adresse} onChange={v => set('adresse', v)} placeholder="Derb Sidi Bouamar…" />
           <FieldSelect label="Quartier" value={r.quartier ?? ''} onChange={v => set('quartier', v)} options={QUARTIERS.map(q => [q, q || '— Quartier —'])} />
           <FieldSelect label="Statut" value={r.statut ?? ''} onChange={v => set('statut', v)}
             options={[['', '— Statut —'], ['visite', 'Visite planifiée'], ['negociation', 'En négociation'], ['proposition', 'Proposition envoyée'], ['signe', 'Signé'], ['archive', 'Archivé']]} />
           <FieldSelect label="État du bien" value={r.etat ?? ''} onChange={v => set('etat', v)}
-            options={[['', '— État —'], ['bon', 'Bon état / rénové'], ['moyen', 'État moyen'], ['mauvais', 'Mauvais état'], ['ruine', 'À rénover']]} />
+            options={[['', '— État —'], ['tres_bon', 'Très bon état / Totalement rénové'], ['bon', 'Bon état / rénové'], ['moyen', 'État moyen'], ['mauvais', 'Mauvais état'], ['ruine', 'À rénover']]} />
           <FieldInput label="Proximité" value={r.proximite} onChange={v => set('proximite', v)} placeholder="5 min Jemaa el-Fna, tombeaux Saadiens…" />
           <FieldInput label="Vue" value={r.vue} onChange={v => set('vue', v)} placeholder="Vue Palais Royal, jardins…" />
           <div style={{ marginTop: 4 }}>
@@ -188,7 +199,7 @@ export function RiadFiche({ initial, onSave, onCancel }: {
               <FieldInput label="Niveaux" value={r.niveaux} onChange={v => set('niveaux', v ? Number(v) : null)} type="number" placeholder="3" />
               <FieldInput label="Chambres" value={r.chambres} onChange={v => set('chambres', v ? Number(v) : null)} type="number" placeholder="4" />
               <FieldInput label="Salles de bain" value={r.sdb} onChange={v => set('sdb', v ? Number(v) : null)} type="number" placeholder="4" />
-              <FieldInput label="Terrasse (m²)" value={r.terrasse} onChange={v => set('terrasse', v ? Number(v) : null)} type="number" placeholder="25" />
+              <FieldInput label="Terrasse / Rooftop (m²)" value={r.terrasse} onChange={v => set('terrasse', v ? Number(v) : null)} type="number" placeholder="25" />
             </div>
             <Divider />
             <SectionLabel>Prix — après mandat</SectionLabel>
@@ -257,7 +268,9 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
   const e = estimation
   const surfTotal = e.mode === 'rapide' ? Number(e.surface) || 0 : Object.values(e.zones).reduce((a, b) => a + (Number(b) || 0), 0)
   const lvl = LEVELS[e.niveau]
-  const quickTotal = surfTotal * Math.round((lvl.min + lvl.max) / 2)
+  const pp = e.prixPerso ? Number(e.prixPerso) : null
+  const pMoyDisplay = pp || Math.round((lvl.min + lvl.max) / 2)
+  const quickTotal = surfTotal * pMoyDisplay
 
   return (
     <div>
@@ -305,7 +318,7 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
               <div style={{ padding: '6px 0' }}>
                 <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>Estimation rapide</div>
                 <div className="serif" style={{ fontSize: 34, color: 'var(--text)', fontWeight: 300 }}>{fmtM(quickTotal)}</div>
-                <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 6 }}>{Math.round(surfTotal)} m² × {Math.round((lvl.min + lvl.max) / 2).toLocaleString()} MAD/m²</div>
+                <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 6 }}>{Math.round(surfTotal)} m² × {pMoyDisplay.toLocaleString()} MAD/m²{pp ? ' (prix perso)' : ''}</div>
               </div>
             </Card>
           ) : (

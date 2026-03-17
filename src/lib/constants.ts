@@ -26,11 +26,12 @@ export const TYPES_BIEN: Record<TypeBien, string> = {
   autre:        'Autre',
 }
 
-export const ETATS = {
-  bon:    'Bon état / rénové',
-  moyen:  'État moyen',
-  mauvais:'Mauvais état',
-  ruine:  'À rénover',
+export const ETATS: Record<string, string> = {
+  tres_bon: 'Très bon état',
+  bon:      'Bon état / rénové',
+  moyen:    'État moyen',
+  mauvais:  'Mauvais état',
+  ruine:    'À rénover',
 }
 
 export const QUARTIERS = [
