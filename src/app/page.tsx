@@ -7,14 +7,15 @@ import { RiadsList, RiadFiche, Estimateur, Resultats, Presentation } from '@/com
 import Prestataires from '@/components/Prestataires'
 import Agenda from '@/components/Agenda'
 import CRM from '@/components/CRM'
+import Comparateur from '@/components/Comparateur'
 import type { Riad } from '@/types'
 
-export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda' | 'crm'
+export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda' | 'crm' | 'comparateur'
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Accueil', riads: 'Mes Riads', fiche: 'Fiche Riad',
   estimateur: 'Estimateur', resultats: 'Résultats', presentation: 'Présentation',
-  prestataires: 'Prestataires', agenda: 'Agenda', crm: 'Contacts',
+  prestataires: 'Prestataires', agenda: 'Agenda', crm: 'Contacts', comparateur: 'Comparateur',
 }
 
 export default function HomePage() {
@@ -174,6 +175,9 @@ export default function HomePage() {
               onDelete={id => setConfirmDeleteRdv(id)}
               onToggleFait={app.updateRdv}
             />
+          )}
+          {view === 'comparateur' && (
+            <Comparateur riads={app.state.riads} />
           )}
           {view === 'crm' && (
             <CRM
