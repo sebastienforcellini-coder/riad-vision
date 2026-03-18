@@ -13,9 +13,12 @@ const NAV = [
 export default function Sidebar({ currentView, onNavigate }: { currentView: View; onNavigate: (v: View) => void }) {
   return (
     <aside style={{ width: 180, background: 'var(--sidebar)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <div style={{ padding: '24px 20px 20px' }}>
-        <div className="serif" style={{ fontSize: 15, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300 }}>Riad Vision</div>
-        <div style={{ fontSize: 10, color: 'var(--soft)', marginTop: 3, letterSpacing: 0.5 }}>Marrakech</div>
+      <div style={{ padding: '20px 16px 18px' }}>
+        <svg width="148" viewBox="0 0 148 52" xmlns="http://www.w3.org/2000/svg">
+          <text fontFamily="Georgia, serif" fontSize="22" fontWeight="400" fill="var(--text)" x="74" y="26" textAnchor="middle" fontStyle="italic">Riad Vision</text>
+          <line x1="14" y1="33" x2="134" y2="33" stroke="#8C5A28" strokeWidth="0.7"/>
+          <text fontFamily="Georgia, serif" fontSize="8" fill="#8C5A28" x="74" y="46" textAnchor="middle" letterSpacing="4">MARRAKECH</text>
+        </svg>
       </div>
       <nav style={{ flex: 1, padding: '4px 10px' }}>
         {NAV.map((item, i) => {
