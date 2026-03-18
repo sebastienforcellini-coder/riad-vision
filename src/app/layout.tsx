@@ -4,7 +4,15 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Riad Vision · Marrakech',
   description: 'Gestion et estimation travaux de riads à Marrakech',
-  icons: { icon: '/favicon.svg' },
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    title: 'Riad Vision',
+    statusBarStyle: 'default',
+    capable: true,
+  },
 }
 
 export const viewport: Viewport = {
@@ -17,6 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <head>
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Riad Vision" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
