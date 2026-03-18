@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useAppState } from '@/lib/useAppState'
-import Sidebar from '@/components/Sidebar'
+import Sidebar, { Logo } from '@/components/Sidebar'
 import Dashboard from '@/components/Dashboard'
 import { RiadsList, RiadFiche, Estimateur, Resultats, Presentation } from '@/components/views'
 import Prestataires from '@/components/Prestataires'
@@ -94,6 +94,9 @@ export default function HomePage() {
           <Sidebar currentView={view} onNavigate={navigate} />
         </div>
         <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--line)' }}>
+            <Logo size="lg" />
+          </div>
           {view === 'dashboard' && <Dashboard riads={app.state.riads} onNavigate={navigate} />}
           {view === 'riads' && (
             <RiadsList

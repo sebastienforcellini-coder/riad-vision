@@ -10,20 +10,51 @@ const NAV = [
   { k: 'prestataires'  as View, l: 'Prestataires'  },
 ]
 
+const Logo = ({ size = 'sm' }: { size?: 'sm' | 'lg' }) => {
+  const fs = size === 'lg' ? 42 : 18
+  const sub = size === 'lg' ? 10 : 8
+  const w = size === 'lg' ? 280 : 148
+  const h = size === 'lg' ? 64 : 44
+  const cx = w / 2
+  const ty = size === 'lg' ? 30 : 20
+  const ly = size === 'lg' ? 40 : 28
+  const sy = size === 'lg' ? 54 : 38
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} xmlns="http://www.w3.org/2000/svg">
+      <text
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize={fs}
+        fontWeight="400"
+        fontStyle="italic"
+        fill="#1A1814"
+        x={cx} y={ty}
+        textAnchor="middle"
+        dominantBaseline="hanging"
+      >Riad Vision</text>
+      <line x1={cx - 60} y1={ly} x2={cx + 60} y2={ly} stroke="#8C5A28" strokeWidth="0.7"/>
+      <text
+        fontFamily="Georgia, 'Times New Roman', serif"
+        fontSize={sub}
+        fill="#8C5A28"
+        x={cx} y={sy}
+        textAnchor="middle"
+        dominantBaseline="hanging"
+        letterSpacing="4"
+      >MARRAKECH</text>
+    </svg>
+  )
+}
+
 export default function Sidebar({ currentView, onNavigate }: { currentView: View; onNavigate: (v: View) => void }) {
   return (
     <aside style={{ width: 180, background: 'var(--sidebar)', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <div style={{ padding: '20px 16px 18px' }}>
-        <svg width="148" viewBox="0 0 148 52" xmlns="http://www.w3.org/2000/svg">
-          <text fontFamily="Georgia, serif" fontSize="22" fontWeight="400" fill="var(--text)" x="74" y="26" textAnchor="middle" fontStyle="italic">Riad Vision</text>
-          <line x1="14" y1="33" x2="134" y2="33" stroke="#8C5A28" strokeWidth="0.7"/>
-          <text fontFamily="Georgia, serif" fontSize="8" fill="#8C5A28" x="74" y="46" textAnchor="middle" letterSpacing="4">MARRAKECH</text>
-        </svg>
+      <div style={{ padding: '20px 16px 18px', display: 'flex', justifyContent: 'center' }}>
+        <Logo size="sm" />
       </div>
       <nav style={{ flex: 1, padding: '4px 10px' }}>
         {NAV.map((item, i) => {
           const active = currentView === item.k
-          const isSeparator = i === 4 // séparateur avant Prestataires
+          const isSeparator = i === 4
           return (
             <div key={item.k}>
               {isSeparator && <div style={{ height: 1, background: 'var(--line)', margin: '8px 4px' }} />}
@@ -45,3 +76,5 @@ export default function Sidebar({ currentView, onNavigate }: { currentView: View
     </aside>
   )
 }
+
+export { Logo }

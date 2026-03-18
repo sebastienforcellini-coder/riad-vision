@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#100d06"/>
-  <polygon points="16,4 28,16 16,28 4,16" fill="#c8960c"/>
-  <polygon points="16,8 24,16 16,24 8,16" fill="#100d06"/>
-  <polygon points="16,11 21,16 16,21 11,16" fill="#e8c87a"/>
+  <rect width="32" height="32" rx="6" fill="#F5EDE3"/>
+  <line x1="6" y1="26" x2="26" y2="26" stroke="#8C5A28" stroke-width="1.5" stroke-linecap="round"/>
+  <text font-family="Georgia, serif" font-size="15" font-style="italic" font-weight="400" fill="#8C5A28" x="16" y="21" text-anchor="middle" dominant-baseline="baseline">RV</text>
 </svg>
