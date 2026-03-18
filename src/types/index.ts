@@ -73,14 +73,51 @@ export interface Rdv {
   createdAt: string
 }
 
+export type TypeContact = 'proprietaire' | 'prospect' | 'notaire' | 'agent' | 'autre'
+export type StatutContact = 'actif' | 'chaud' | 'froid' | 'clos'
+
+export interface Interaction {
+  id: string
+  date: string
+  type: 'appel' | 'email' | 'visite' | 'whatsapp' | 'autre'
+  notes: string
+}
+
+export interface Proprietaire {
+  id: number
+  typeContact: TypeContact
+  statut: StatutContact
+  nom: string
+  prenom: string
+  telephone: string
+  email: string
+  langue: string        // fr, ar, en, es...
+  origine: string       // comment il a été trouvé
+  // Biens liés
+  riadsIds: number[]    // riads associés
+  // Infos vente
+  motivation: string    // pourquoi vend-il ?
+  prixSouhaite: number | null
+  delaiVente: string    // urgent, 3 mois, 1 an...
+  // Prospect acheteur
+  budget: number | null
+  criteres: string      // ce qu'il cherche
+  // Historique
+  interactions: Interaction[]
+  notes: string
+  createdAt: string
+}
+
 export interface AppState {
   riads: Riad[]
   estimation: Estimation
   prestataires: Prestataire[]
   rdvs: Rdv[]
+  proprietaires: Proprietaire[]
   nextId: number
   nextPrestaId: number
   nextRdvId: number
+  nextProprioId: number
 }
 
 // ── PRESTATAIRES ──────────────────────────────────────────────────────────

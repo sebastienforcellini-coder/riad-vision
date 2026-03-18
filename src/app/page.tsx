@@ -6,14 +6,15 @@ import Dashboard from '@/components/Dashboard'
 import { RiadsList, RiadFiche, Estimateur, Resultats, Presentation } from '@/components/views'
 import Prestataires from '@/components/Prestataires'
 import Agenda from '@/components/Agenda'
+import CRM from '@/components/CRM'
 import type { Riad } from '@/types'
 
-export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda'
+export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda' | 'crm'
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Accueil', riads: 'Mes Riads', fiche: 'Fiche Riad',
   estimateur: 'Estimateur', resultats: 'Résultats', presentation: 'Présentation',
-  prestataires: 'Prestataires', agenda: 'Agenda',
+  prestataires: 'Prestataires', agenda: 'Agenda', crm: 'Contacts',
 }
 
 export default function HomePage() {
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [confirmDeletePresta, setConfirmDeletePresta] = useState<number | null>(null)
   const [confirmDeleteRdv, setConfirmDeleteRdv] = useState<number | null>(null)
+  const [confirmDeleteProprio, setConfirmDeleteProprio] = useState<number | null>(null)
 
   const navigate = (v: View, opts?: { riad?: Partial<Riad> }) => {
     if (opts?.riad !== undefined) setEditRiad(opts.riad)
@@ -91,6 +93,20 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Delete proprio modal */}
+      {confirmDeleteProprio && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,24,20,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--white)', borderRadius: 10, padding: 28, maxWidth: 360, width: '90%', border: '1px solid var(--line)' }}>
+            <div className="serif" style={{ fontSize: 20, fontStyle: 'italic', fontWeight: 300, marginBottom: 10 }}>Supprimer ce contact ?</div>
+            <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Son historique sera perdu.</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setConfirmDeleteProprio(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
+              <button onClick={() => { app.deleteProprietaire(confirmDeleteProprio); setConfirmDeleteProprio(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete rdv modal */}
       {confirmDeleteRdv && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,24,20,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -153,6 +169,15 @@ export default function HomePage() {
               onEdit={app.updateRdv}
               onDelete={id => setConfirmDeleteRdv(id)}
               onToggleFait={app.updateRdv}
+            />
+          )}
+          {view === 'crm' && (
+            <CRM
+              proprietaires={app.state.proprietaires}
+              riads={app.state.riads}
+              onAdd={app.addProprietaire}
+              onEdit={app.updateProprietaire}
+              onDelete={id => setConfirmDeleteProprio(id)}
             />
           )}
         </main>

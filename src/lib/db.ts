@@ -60,3 +60,11 @@ export async function saveRdv(rdv: import('@/types').Rdv) {
 export async function deleteRdv(id: number) {
   try { await dbCall({ action: 'delete', table: 'rdvs', id }) } catch {}
 }
+
+export async function saveProprietaire(p: import('@/types').Proprietaire) {
+  try { const { id, ...data } = p; await dbCall({ action: 'upsert', table: 'proprietaires', id, data }) } catch (e) { console.error('saveProprietaire:', e) }
+}
+
+export async function deleteProprietaire(id: number) {
+  try { await dbCall({ action: 'delete', table: 'proprietaires', id }) } catch {}
+}

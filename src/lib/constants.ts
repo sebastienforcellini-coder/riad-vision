@@ -165,3 +165,29 @@ export const TYPES_RDV: Record<TypeRdv, { label: string; color: string; bg: stri
   appel:       { label: 'Appel',        color: '#185FA5', bg: '#E6F1FB' },
   autre:       { label: 'Autre',        color: '#6B6560', bg: '#F0EDE8' },
 }
+
+// ── CRM ───────────────────────────────────────────────────────────────────
+import type { TypeContact, StatutContact } from '@/types'
+
+export const TYPES_CONTACT: Record<TypeContact, { label: string; color: string; bg: string }> = {
+  proprietaire: { label: 'Propriétaire',  color: '#8C5A28', bg: '#F5EDE3' },
+  prospect:     { label: 'Prospect',      color: '#185FA5', bg: '#E6F1FB' },
+  notaire:      { label: 'Notaire',       color: '#0F6E56', bg: '#E1F5EE' },
+  agent:        { label: 'Agent',         color: '#534AB7', bg: '#EEEDFE' },
+  autre:        { label: 'Autre',         color: '#6B6560', bg: '#F0EDE8' },
+}
+
+export const STATUTS_CONTACT: Record<StatutContact, { label: string; color: string }> = {
+  actif:  { label: 'Actif',    color: '#3A7D5C' },
+  chaud:  { label: 'Chaud 🔥', color: '#C0392B' },
+  froid:  { label: 'Froid',    color: '#185FA5' },
+  clos:   { label: 'Clôturé',  color: '#B0AA9E' },
+}
+
+export const TYPES_INTERACTION = {
+  appel:    { label: 'Appel',    emoji: '📞' },
+  email:    { label: 'Email',    emoji: '✉️' },
+  visite:   { label: 'Visite',   emoji: '🏠' },
+  whatsapp: { label: 'WhatsApp', emoji: '💬' },
+  autre:    { label: 'Autre',    emoji: '📝' },
+}

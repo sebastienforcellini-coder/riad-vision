@@ -8,6 +8,7 @@ const NAV = [
   { k: 'resultats'     as View, l: 'Résultats'     },
   { k: 'presentation'  as View, l: 'Présentation'  },
   { k: 'agenda'        as View, l: 'Agenda'         },
+  { k: 'crm'           as View, l: 'Contacts'       },
   { k: 'prestataires'  as View, l: 'Prestataires'  },
 ]
 

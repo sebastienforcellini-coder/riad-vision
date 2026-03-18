@@ -6,25 +6,25 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zb2djc21yaXVmamN5bWxtYXR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NjgwMzUsImV4cCI6MjA4OTM0NDAzNX0.mrZwfKxmHv81SXd3Mc2TCaCeGZZVBACL2X-21nfuwEs'
 )
 
-const TABLES = ['riads', 'prestataires', 'estimation', 'rdvs']
+const TABLES = ['riads', 'prestataires', 'estimation', 'rdvs', 'proprietaires']
 
 export async function GET() {
   try {
-    const [riadsRes, prestaRes, estRes, rdvsRes] = await Promise.all([
+    const [riadsRes, prestaRes, estRes, rdvsRes, proprioRes] = await Promise.all([
       supabase.from('riads').select('id, data').order('id'),
       supabase.from('prestataires').select('id, data').order('id'),
       supabase.from('estimation').select('data').eq('id', 1).maybeSingle(),
       supabase.from('rdvs').select('id, data').order('id'),
+      supabase.from('proprietaires').select('id, data').order('id'),
     ])
     return NextResponse.json({
       riads: (riadsRes.data || []).map((r: any) => ({ ...r.data, id: r.id })),
       prestataires: (prestaRes.data || []).map((r: any) => ({ ...r.data, id: r.id })),
       estimation: estRes.data?.data ?? null,
       rdvs: (rdvsRes.data || []).map((r: any) => ({ ...r.data, id: r.id })),
+      proprietaires: (proprioRes.data || []).map((r: any) => ({ ...r.data, id: r.id })),
     })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
-  }
+  } catch (e) { return NextResponse.json({ error: String(e) }, { status: 500 }) }
 }
 
 export async function POST(req: NextRequest) {
@@ -41,7 +41,5 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true })
     }
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
-  }
+  } catch (e) { return NextResponse.json({ error: String(e) }, { status: 500 }) }
 }
