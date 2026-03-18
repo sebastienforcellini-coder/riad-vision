@@ -7,19 +7,34 @@ import { Card, StatutChip, PageHeader, Btn } from './ui'
 
 function Clock() {
   const [now, setNow] = useState(new Date())
+  const [tz, setTz] = useState<'Europe/Paris' | 'Africa/Casablanca'>('Europe/Paris')
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
 
-  const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: tz })
+  const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz })
   const dateCapitalized = date.charAt(0).toUpperCase() + date.slice(1)
 
   return (
     <div style={{ textAlign: 'right' }}>
       <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontStyle: 'italic', color: 'var(--text)', fontWeight: 300, letterSpacing: 1 }}>{time}</div>
       <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 2 }}>{dateCapitalized}</div>
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 6 }}>
+        {(['Europe/Paris', 'Africa/Casablanca'] as const).map(t => (
+          <button key={t} onClick={() => setTz(t)} style={{
+            fontSize: 9, padding: '2px 7px', borderRadius: 10, cursor: 'pointer', letterSpacing: 0.5,
+            background: tz === t ? '#8C5A28' : 'transparent',
+            color: tz === t ? 'white' : 'var(--soft)',
+            border: `1px solid ${tz === t ? '#8C5A28' : 'var(--line)'}`,
+            transition: 'all 0.15s',
+          }}>
+            {t === 'Europe/Paris' ? 'Paris' : 'Maroc'}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
