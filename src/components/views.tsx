@@ -3,10 +3,11 @@ import { useState } from 'react'
 import type { Riad, Estimation, TypeBien } from '@/types'
 import { LEVELS, ETATS, ZONES, TRANSFORMATIONS, QUARTIERS, TYPES_BIEN, STATUTS, fmtM, fmtMAD, fmtEUR, calcEstimation } from '@/lib/constants'
 import { Card, SectionLabel, Divider, StatutChip, FieldInput, FieldSelect, StatRow, PrixM2Block, PageHeader, Btn, Chip } from '@/components/ui'
+import PhotoGallery from '@/components/PhotoGallery'
 
 const EMPTY_RIAD: Partial<Riad> = {
   typeBien: 'riad', titre: false, meuble: false, enActivite: false,
-  piscine: false, bassin: false, clim: false,
+  piscine: false, bassin: false, clim: false, photos: [],
 }
 
 // ── RIADS LIST ──────────────────────────────────────────────────────────────
@@ -23,8 +24,18 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
           const m2mad = prix && r.surface ? Math.round(prix / r.surface) : null
           const m2eur = m2mad ? Math.round(m2mad / 11) : null
           return (
-            <Card key={r.id} style={{ padding: '16px 20px' }}>
-              <div className="riad-card-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Card key={r.id} style={{ padding: 0, overflow: 'hidden' }}>
+              {/* Photo principale si disponible */}
+              {r.photos && r.photos.length > 0 && (
+                <div style={{ height: 140, overflow: 'hidden', cursor: 'pointer' }} onClick={() => onEdit(r)}>
+                  <img
+                    src={`https://nsogcsmriufjcymlmatz.supabase.co/storage/v1/object/public/riad-photos/${r.photos[0]}`}
+                    alt={r.nom}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+              )}
+              <div className="riad-card-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 20px' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     {r.typeBien && r.typeBien !== 'riad' && (
@@ -257,6 +268,26 @@ export function RiadFiche({ initial, onSave, onCancel }: {
               </div>
             )}
           </Card>
+
+          {/* Photos — uniquement si le riad existe déjà */}
+          {r.id && (
+            <Card>
+              <SectionLabel>Photos</SectionLabel>
+              <PhotoGallery
+                riadId={r.id}
+                photos={r.photos ?? []}
+                onPhotosChange={photos => set('photos', photos)}
+              />
+            </Card>
+          )}
+          {!r.id && (
+            <Card>
+              <SectionLabel>Photos</SectionLabel>
+              <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic' }}>
+                Créez d&apos;abord la fiche pour pouvoir ajouter des photos
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </div>

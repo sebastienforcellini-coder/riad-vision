@@ -35,6 +35,8 @@ export interface Riad {
   potentiel: string
   contraintes: string
   notes: string
+  // Photos
+  photos: string[]          // chemins Supabase Storage
   // Rentabilité
   tarifNuit: number | null
   tauxOccupation: number | null

@@ -1,34 +1,42 @@
 'use client'
 import { useState } from 'react'
 import type { Riad } from '@/types'
-import { ETATS, TYPES_BIEN, fmtM, fmtEUR } from '@/lib/constants'
+import { ETATS, TYPES_BIEN, LEVELS, fmtM, fmtEUR } from '@/lib/constants'
 import { PageHeader, Btn, Card } from '@/components/ui'
 
 const MAX = 3
 
-function Score({ label, val, max, color }: { label: string; val: number; max: number; color: string }) {
-  const pct = Math.round((val / max) * 100)
-  return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ fontSize: 10, color: 'var(--soft)' }}>{label}</span>
-        <span style={{ fontSize: 10, color, fontWeight: 500 }}>{val.toLocaleString()}</span>
-      </div>
-      <div style={{ height: 4, background: 'var(--line)', borderRadius: 2 }}>
-        <div style={{ height: '100%', width: pct + '%', background: color, borderRadius: 2, transition: 'width 0.4s' }} />
-      </div>
-    </div>
-  )
+// Calcul budget travaux estimé selon état du bien
+function estimeBudgetTravaux(riad: Riad): { min: number; moy: number; max: number } | null {
+  if (!riad.surface) return null
+  const surf = riad.surface
+  let niveau: keyof typeof LEVELS = 'standard'
+  if (riad.etat === 'ruine') niveau = 'luxe'
+  else if (riad.etat === 'mauvais') niveau = 'complete'
+  else if (riad.etat === 'moyen') niveau = 'standard'
+  else if (riad.etat === 'bon' || riad.etat === 'tres_bon') niveau = 'rafraich'
+  else return null
+  const lvl = LEVELS[niveau]
+  return {
+    min: surf * lvl.min,
+    moy: surf * Math.round((lvl.min + lvl.max) / 2),
+    max: surf * lvl.max,
+  }
 }
 
-function RiadCard({ riad, onRemove, rank }: { riad: Riad; onRemove: () => void; rank: { prix: boolean; surface: boolean; rendement: boolean } }) {
+function RiadCard({ riad, onRemove, rank }: { riad: Riad; onRemove: () => void; rank: { prix: boolean; surface: boolean; rendement: boolean; projetTotal: boolean } }) {
   const prix = riad.prixN ?? riad.prixD
   const m2mad = prix && riad.surface ? Math.round(prix / riad.surface) : null
   const m2eur = m2mad ? Math.round(m2mad / 11) : null
 
+  const travaux = estimeBudgetTravaux(riad)
+  const projetTotal = prix && travaux ? prix + travaux.moy : null
+  const projetM2 = projetTotal && riad.surface ? Math.round(projetTotal / riad.surface) : null
+
   const nuits = riad.tarifNuit && riad.tauxOccupation ? Math.round(365 * riad.tauxOccupation / 100) : null
   const caNet = nuits && riad.tarifNuit ? Math.round(riad.tarifNuit * nuits * 0.6) : null
-  const rendement = caNet && prix ? ((caNet / prix) * 100).toFixed(1) : null
+  const rendSurAchat = caNet && prix ? ((caNet / prix) * 100).toFixed(1) : null
+  const rendSurProjet = caNet && projetTotal ? ((caNet / projetTotal) * 100).toFixed(1) : null
 
   const surfTotale = (riad.surface ?? 0) + (riad.terrasse ?? 0) + (riad.terrasse2 ?? 0) + (riad.terrasse3 ?? 0)
 
@@ -60,17 +68,58 @@ function RiadCard({ riad, onRemove, rank }: { riad: Riad; onRemove: () => void; 
         )}
       </div>
 
-      {/* Prix */}
+      {/* Prix achat */}
       <div style={{ border: '1px solid var(--line)', borderTop: 'none', padding: '12px 16px', background: rank.prix ? '#EAF3EC' : 'var(--white)' }}>
         <div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 2 }}>PRIX {riad.prixN ? 'NÉGOCIÉ' : 'DEMANDÉ'}</div>
         {prix ? (
           <>
             <div className="serif" style={{ fontSize: 22, color: rank.prix ? '#3A7D5C' : 'var(--text)', fontWeight: 300 }}>
-              {fmtM(prix)} {rank.prix && <span style={{ fontSize: 11 }}>✓ Meilleur</span>}
+              {fmtM(prix)} {rank.prix && <span style={{ fontSize: 11 }}>✓</span>}
             </div>
             {m2mad && <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 2 }}>{m2mad.toLocaleString()} MAD/m² · {fmtEUR(m2eur!)}/m²</div>}
           </>
         ) : <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic' }}>Non renseigné</div>}
+      </div>
+
+      {/* Budget travaux */}
+      <div style={{ border: '1px solid var(--line)', borderTop: 'none', padding: '12px 16px', background: 'var(--white)' }}>
+        <div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 6 }}>BUDGET TRAVAUX ESTIMÉ</div>
+        {travaux ? (
+          <>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <div style={{ flex: 1, textAlign: 'center', padding: '6px', background: 'var(--bg)', borderRadius: 6 }}>
+                <div style={{ fontSize: 9, color: 'var(--soft)', marginBottom: 2 }}>Min</div>
+                <div style={{ fontSize: 12, color: 'var(--mid)' }}>{fmtM(travaux.min)}</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center', padding: '6px', background: '#F5EDE3', borderRadius: 6, border: '1px solid rgba(140,90,40,0.2)' }}>
+                <div style={{ fontSize: 9, color: 'var(--accent)', marginBottom: 2 }}>Estimé</div>
+                <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 500 }}>{fmtM(travaux.moy)}</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center', padding: '6px', background: 'var(--bg)', borderRadius: 6 }}>
+                <div style={{ fontSize: 9, color: 'var(--soft)', marginBottom: 2 }}>Max</div>
+                <div style={{ fontSize: 12, color: 'var(--mid)' }}>{fmtM(travaux.max)}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--soft)', fontStyle: 'italic' }}>
+              Basé sur état : {riad.etat ? ETATS[riad.etat] : '—'} · {riad.surface} m²
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: 11, color: 'var(--soft)', fontStyle: 'italic' }}>État du bien non renseigné</div>
+        )}
+      </div>
+
+      {/* Projet total */}
+      <div style={{ border: '1px solid var(--line)', borderTop: 'none', padding: '12px 16px', background: rank.projetTotal ? '#EAF3EC' : 'var(--white)' }}>
+        <div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 4 }}>PROJET TOTAL (achat + travaux)</div>
+        {projetTotal ? (
+          <>
+            <div className="serif" style={{ fontSize: 20, color: rank.projetTotal ? '#3A7D5C' : 'var(--text)', fontWeight: 300 }}>
+              {fmtM(projetTotal)} {rank.projetTotal && <span style={{ fontSize: 11 }}>✓</span>}
+            </div>
+            {projetM2 && <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 2 }}>{projetM2.toLocaleString()} MAD/m² rénové</div>}
+          </>
+        ) : <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic' }}>Données insuffisantes</div>}
       </div>
 
       {/* Surface */}
@@ -107,28 +156,16 @@ function RiadCard({ riad, onRemove, rank }: { riad: Riad; onRemove: () => void; 
       <div style={{ border: '1px solid var(--line)', borderTop: 'none', padding: '12px 16px', background: rank.rendement ? '#EAF3EC' : 'var(--white)' }}>
         <div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 6 }}>RENTABILITÉ LOCATIVE</div>
         {caNet ? (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              <div>
-                <div style={{ fontSize: 9, color: 'var(--soft)' }}>Tarif nuit</div>
-                <div style={{ fontSize: 13 }}>{riad.tarifNuit?.toLocaleString()} MAD</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, color: 'var(--soft)' }}>Occupation</div>
-                <div style={{ fontSize: 13 }}>{riad.tauxOccupation}%</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, color: 'var(--soft)' }}>Net annuel</div>
-                <div style={{ fontSize: 13 }}>{fmtM(caNet)}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, color: 'var(--soft)' }}>Rendement</div>
-                <div style={{ fontSize: 14, color: rank.rendement ? '#3A7D5C' : 'var(--text)', fontWeight: 500 }}>
-                  {rendement}% {rank.rendement && '✓'}
-                </div>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            <div><div style={{ fontSize: 9, color: 'var(--soft)' }}>Tarif nuit</div><div style={{ fontSize: 13 }}>{riad.tarifNuit?.toLocaleString()} MAD</div></div>
+            <div><div style={{ fontSize: 9, color: 'var(--soft)' }}>Occupation</div><div style={{ fontSize: 13 }}>{riad.tauxOccupation}%</div></div>
+            <div><div style={{ fontSize: 9, color: 'var(--soft)' }}>Net annuel</div><div style={{ fontSize: 13 }}>{fmtM(caNet)}</div></div>
+            <div>
+              <div style={{ fontSize: 9, color: 'var(--soft)' }}>Rendement</div>
+              <div style={{ fontSize: 9, color: 'var(--soft)' }}>Sur achat : <span style={{ color: rank.rendement ? '#3A7D5C' : 'var(--text)', fontWeight: 500 }}>{rendSurAchat}%</span></div>
+              {rendSurProjet && <div style={{ fontSize: 9, color: 'var(--soft)' }}>Sur projet : <span style={{ color: 'var(--mid)', fontWeight: 500 }}>{rendSurProjet}%</span></div>}
             </div>
-          </>
+          </div>
         ) : <div style={{ fontSize: 11, color: 'var(--soft)', fontStyle: 'italic' }}>Données insuffisantes</div>}
       </div>
 
@@ -136,14 +173,11 @@ function RiadCard({ riad, onRemove, rank }: { riad: Riad; onRemove: () => void; 
       <div style={{ border: '1px solid var(--line)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '12px 16px', background: 'var(--white)' }}>
         <div style={{ fontSize: 10, color: 'var(--soft)', marginBottom: 4 }}>POTENTIEL</div>
         <div style={{ fontSize: 12, color: 'var(--mid)', fontStyle: 'italic', minHeight: 36 }}>{riad.potentiel || '—'}</div>
-        {riad.contraintes && (
-          <div style={{ fontSize: 11, color: '#C0392B', marginTop: 6 }}>⚠ {riad.contraintes}</div>
-        )}
+        {riad.contraintes && <div style={{ fontSize: 11, color: '#C0392B', marginTop: 6 }}>⚠ {riad.contraintes}</div>}
       </div>
     </div>
   )
 }
-
 export default function Comparateur({ riads }: { riads: Riad[] }) {
   const [selected, setSelected] = useState<number[]>([])
   const [search, setSearch] = useState('')
@@ -159,6 +193,11 @@ export default function Comparateur({ riads }: { riads: Riad[] }) {
   // Calculs pour ranking
   const prix = selectedRiads.map(r => r.prixN ?? r.prixD ?? Infinity)
   const surfaces = selectedRiads.map(r => (r.surface ?? 0) + (r.terrasse ?? 0) + (r.terrasse2 ?? 0) + (r.terrasse3 ?? 0))
+  const projets = selectedRiads.map(r => {
+    const p = r.prixN ?? r.prixD
+    const t = estimeBudgetTravaux(r)
+    return p && t ? p + t.moy : Infinity
+  })
   const rendements = selectedRiads.map(r => {
     if (!r.tarifNuit || !r.tauxOccupation) return 0
     const net = r.tarifNuit * Math.round(365 * r.tauxOccupation / 100) * 0.6
@@ -168,6 +207,7 @@ export default function Comparateur({ riads }: { riads: Riad[] }) {
 
   const minPrix = Math.min(...prix.filter(p => p !== Infinity))
   const maxSurf = Math.max(...surfaces)
+  const minProjet = Math.min(...projets.filter(p => p !== Infinity))
   const maxRend = Math.max(...rendements)
 
   return (
@@ -232,6 +272,7 @@ export default function Comparateur({ riads }: { riads: Riad[] }) {
                 rank={{
                   prix: prix[i] === minPrix && minPrix !== Infinity,
                   surface: surfaces[i] === maxSurf && maxSurf > 0,
+                  projetTotal: projets[i] === minProjet && minProjet !== Infinity,
                   rendement: rendements[i] === maxRend && maxRend > 0,
                 }}
               />
