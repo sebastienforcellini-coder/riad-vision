@@ -1,8 +1,28 @@
 'use client'
+import { useState, useEffect } from 'react'
 import type { Riad } from '@/types'
 import type { View } from '@/app/page'
 import { STATUTS, fmtM } from '@/lib/constants'
 import { Card, StatutChip, PageHeader, Btn } from './ui'
+
+function Clock() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const dateCapitalized = date.charAt(0).toUpperCase() + date.slice(1)
+
+  return (
+    <div style={{ textAlign: 'right' }}>
+      <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontStyle: 'italic', color: 'var(--text)', fontWeight: 300, letterSpacing: 1 }}>{time}</div>
+      <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 2 }}>{dateCapitalized}</div>
+    </div>
+  )
+}
 
 export default function Dashboard({ riads, onNavigate }: { riads: Riad[]; onNavigate: (v: View, opts?: { riad?: Partial<Riad> }) => void }) {
   const totalVal = riads.reduce((a, r) => a + (r.prixN ?? r.prixD ?? 0), 0)
@@ -22,12 +42,16 @@ export default function Dashboard({ riads, onNavigate }: { riads: Riad[]; onNavi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Logo centré en haut */}
-      <div style={{ textAlign: 'center', padding: '24px 0 12px' }}>
-        <div style={{ display: 'inline-block' }}>
+      {/* Header : logo centré + horloge à droite */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '24px 0 12px' }}>
+        <div />
+        <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: 'Georgia, serif', fontSize: 52, fontStyle: 'italic', fontWeight: 400, color: 'var(--text)', lineHeight: 1.1 }}>Riad Vision</div>
           <div style={{ height: 1, background: '#8C5A28', margin: '8px 40px 6px', opacity: 0.7 }} />
           <div style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: '#8C5A28', letterSpacing: 6, textAlign: 'center' }}>MARRAKECH</div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Clock />
         </div>
       </div>
 
