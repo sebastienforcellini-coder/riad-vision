@@ -145,7 +145,7 @@ export default function HomePage() {
             />
           )}
           {view === 'estimateur' && (
-            <Estimateur riads={app.state.riads} estimation={app.state.estimation} onChange={app.setEstimation} onResults={() => navigate('resultats')} />
+            <Estimateur riads={app.state.riads} prestataires={app.state.prestataires} estimation={app.state.estimation} onChange={app.setEstimation} onResults={() => navigate('resultats')} />
           )}
           {view === 'resultats' && (
             <Resultats estimation={app.state.estimation} riads={app.state.riads} onBack={() => navigate('estimateur')} onRiads={() => navigate('riads')} onPresent={() => navigate('presentation')} />

@@ -48,6 +48,7 @@ export interface ZonesSurfaces {
 
 export interface Estimation {
   riadId: number | null
+  prestaId: number | null   // prestataire sélectionné
   mode: ModeEstimation
   niveau: NiveauRenovation
   surface: number

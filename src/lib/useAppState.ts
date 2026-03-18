@@ -15,7 +15,7 @@ const DEMO_RIADS: Riad[] = [
 
 const DEFAULT_STATE: AppState = {
   riads: DEMO_RIADS,
-  estimation: { riadId: null, mode: 'rapide', niveau: 'complete', surface: 200, zones: { ...DEFAULT_ZONES }, transf: [], prixPerso: '' },
+  estimation: { riadId: null, prestaId: null, mode: 'rapide', niveau: 'complete', surface: 200, zones: { ...DEFAULT_ZONES }, transf: [], prixPerso: '' },
   prestataires: [], rdvs: [], proprietaires: [],
   nextId: 4, nextPrestaId: 1, nextRdvId: 1, nextProprioId: 1,
 }

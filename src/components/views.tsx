@@ -264,15 +264,48 @@ export function RiadFiche({ initial, onSave, onCancel }: {
 }
 
 // ── ESTIMATEUR ──────────────────────────────────────────────────────────────
-export function Estimateur({ riads, estimation, onChange, onResults }: {
-  riads: Riad[]; estimation: Estimation; onChange: (e: Partial<Estimation>) => void; onResults: () => void
+export function Estimateur({ riads, prestataires, estimation, onChange, onResults }: {
+  riads: Riad[]; prestataires: import('@/types').Prestataire[]; estimation: Estimation; onChange: (e: Partial<Estimation>) => void; onResults: () => void
 }) {
   const e = estimation
   const surfTotal = e.mode === 'rapide' ? Number(e.surface) || 0 : Object.values(e.zones).reduce((a, b) => a + (Number(b) || 0), 0)
   const lvl = LEVELS[e.niveau]
-  const pp = e.prixPerso ? Number(e.prixPerso) : null
+
+  // Trouver le prestataire sélectionné
+  const presta = prestataires.find(p => p.id === e.prestaId) ?? null
+
+  // Prix au m² depuis le prestataire (premier tarif m²)
+  const prestaPrixM2 = presta?.tarifs.find(t => t.type === 'm2')?.prix ?? null
+
+  // Transformations couvertes par le prestataire
+  const prestaForfaits: Record<string, number> = {}
+  if (presta) {
+    presta.tarifs.forEach(t => {
+      if (t.type === 'forfait') {
+        TRANSFORMATIONS.forEach(tr => {
+          if (t.label.toLowerCase().includes(tr.l.toLowerCase().split(' ')[0])) {
+            prestaForfaits[tr.k] = t.prix
+          }
+        })
+      }
+    })
+  }
+
+  // Prix effectif utilisé
+  const pp = e.prixPerso ? Number(e.prixPerso) : prestaPrixM2
   const pMoyDisplay = pp || Math.round((lvl.min + lvl.max) / 2)
   const quickTotal = surfTotal * pMoyDisplay
+
+  // Appliquer les tarifs du prestataire
+  const handlePresta = (id: string) => {
+    const pid = id ? Number(id) : null
+    const p = prestataires.find(x => x.id === pid)
+    const m2 = p?.tarifs.find(t => t.type === 'm2')?.prix
+    onChange({ prestaId: pid, prixPerso: m2 ? String(m2) : '' })
+  }
+
+  // MOE = prestataires avec tarif m²
+  const moesDisponibles = prestataires.filter(p => p.tarifs.some(t => t.type === 'm2'))
 
   return (
     <div>
@@ -287,6 +320,32 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
               {riads.map(r => <option key={r.id} value={r.id}>{r.nom}</option>)}
             </select>
           </div>
+
+          {/* Sélection prestataire */}
+          <div style={{ marginBottom: 16 }}>
+            <div className="label">Prestataire / Maître d&apos;œuvre</div>
+            <select className="field-input" value={e.prestaId ?? ''} onChange={ev => handlePresta(ev.target.value)}>
+              <option value="">— Fourchettes marché —</option>
+              {prestataires.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.nom}{p.tarifs.some(t => t.type === 'm2') ? ` · ${p.tarifs.find(t => t.type === 'm2')!.prix.toLocaleString()} MAD/m²` : ''}
+                </option>
+              ))}
+            </select>
+            {presta && (
+              <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--green-bg)', borderRadius: 8, border: '1px solid rgba(58,125,92,0.2)' }}>
+                <div style={{ fontSize: 11, color: 'var(--green)', fontWeight: 500, marginBottom: 4 }}>✓ Tarifs de {presta.nom} appliqués</div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  {presta.tarifs.slice(0, 4).map(t => (
+                    <span key={t.id} style={{ fontSize: 10, color: 'var(--green)' }}>
+                      {t.label} : {t.prix.toLocaleString()} MAD{t.type === 'm2' ? '/m²' : t.type === 'unite' ? '/u' : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div style={{ marginBottom: 16 }}>
             <div className="label">Mode</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
@@ -295,22 +354,31 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
               ))}
             </div>
           </div>
+
           <div style={{ marginBottom: 16 }}>
             <div className="label">Niveau de rénovation</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 5 }}>
               {(Object.entries(LEVELS) as [string, typeof LEVELS[keyof typeof LEVELS]][]).map(([k, v]) => (
                 <button key={k} onClick={() => onChange({ niveau: k as Estimation['niveau'] })} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: 6, cursor: 'pointer', textAlign: 'left', background: e.niveau === k ? v.bg : 'var(--white)', border: `1px solid ${e.niveau === k ? v.color + '55' : 'var(--line)'}` }}>
                   <span style={{ fontSize: 12, color: e.niveau === k ? v.color : 'var(--mid)' }}>{v.label}</span>
-                  <span style={{ fontSize: 11, color: e.niveau === k ? v.color : 'var(--soft)' }}>{Math.round(v.min / 1000)}–{Math.round(v.max / 1000)} K/m²</span>
+                  <span style={{ fontSize: 11, color: e.niveau === k ? v.color : 'var(--soft)' }}>
+                    {Math.round(v.min / 1000)}–{Math.round(v.max / 1000)} K/m²
+                    {prestaPrixM2 && <span style={{ color: 'var(--green)', marginLeft: 6 }}>· {presta?.nom.split(' ')[0]}: {Math.round(prestaPrixM2/1000)}K</span>}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
+
           <div>
-            <div className="label">Prix maître d&apos;œuvre (MAD/m²)</div>
-            <input className="field-input" type="number" value={e.prixPerso} onChange={ev => onChange({ prixPerso: ev.target.value })} placeholder="Optionnel — remplace les fourchettes" />
+            <div className="label">Prix MAD/m² {presta ? `(${presta.nom})` : 'personnalisé'}</div>
+            <input className="field-input" type="number" value={e.prixPerso} onChange={ev => onChange({ prixPerso: ev.target.value })} placeholder={prestaPrixM2 ? `${prestaPrixM2} (${presta?.nom})` : 'Optionnel — remplace les fourchettes'} />
+            {presta && !e.prixPerso && prestaPrixM2 && (
+              <div style={{ fontSize: 10, color: 'var(--green)', marginTop: 4 }}>Prix du prestataire utilisé automatiquement</div>
+            )}
           </div>
         </Card>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {e.mode === 'rapide' ? (
             <Card>
@@ -318,9 +386,32 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
               <div style={{ marginBottom: 16 }}><div className="label">m² total</div><input className="field-input" type="number" value={e.surface} onChange={ev => onChange({ surface: Number(ev.target.value) })} placeholder="200" /></div>
               <Divider />
               <div style={{ padding: '6px 0' }}>
-                <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>Estimation rapide</div>
+                <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 8 }}>Estimation {presta ? `— ${presta.nom}` : 'rapide'}</div>
                 <div className="serif" style={{ fontSize: 34, color: 'var(--text)', fontWeight: 300 }}>{fmtM(quickTotal)}</div>
-                <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 6 }}>{Math.round(surfTotal)} m² × {pMoyDisplay.toLocaleString()} MAD/m²{pp ? ' (prix perso)' : ''}</div>
+                <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 6 }}>
+                  {Math.round(surfTotal)} m² × {pMoyDisplay.toLocaleString()} MAD/m²
+                  {presta ? <span style={{ color: 'var(--green)' }}> · {presta.nom}</span> : pp ? ' (prix perso)' : ''}
+                </div>
+                {/* Comparaison marché vs prestataire */}
+                {presta && prestaPrixM2 && (
+                  <div style={{ marginTop: 10, padding: '8px 10px', background: 'var(--bg)', borderRadius: 6, fontSize: 11 }}>
+                    <div style={{ color: 'var(--soft)', marginBottom: 4 }}>Comparaison marché</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--mid)' }}>Fourchette marché</span>
+                      <span>{fmtM(surfTotal * Math.round((lvl.min + lvl.max) / 2))}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                      <span style={{ color: 'var(--green)' }}>{presta.nom}</span>
+                      <span style={{ color: 'var(--green)', fontWeight: 500 }}>{fmtM(quickTotal)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, borderTop: '1px solid var(--line)', paddingTop: 3 }}>
+                      <span style={{ color: 'var(--soft)' }}>Différence</span>
+                      <span style={{ color: prestaPrixM2 < Math.round((lvl.min + lvl.max) / 2) ? 'var(--green)' : '#C0392B', fontWeight: 500 }}>
+                        {prestaPrixM2 < Math.round((lvl.min + lvl.max) / 2) ? '−' : '+'}{fmtM(Math.abs(quickTotal - surfTotal * Math.round((lvl.min + lvl.max) / 2)))}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
           ) : (
@@ -335,15 +426,26 @@ export function Estimateur({ riads, estimation, onChange, onResults }: {
               <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 12, color: 'var(--mid)' }}>Total</span><span className="serif" style={{ fontSize: 16, fontWeight: 300 }}>{surfTotal} m²</span></div>
             </Card>
           )}
+
           <Card>
             <SectionLabel>Transformations</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {TRANSFORMATIONS.map(t => {
                 const checked = e.transf.includes(t.k)
+                const prestaPrice = prestaForfaits[t.k]
                 return (
                   <button key={t.k} onClick={() => { const tr = checked ? e.transf.filter(x => x !== t.k) : [...e.transf, t.k]; onChange({ transf: tr }) }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 6, cursor: 'pointer', textAlign: 'left', background: checked ? 'var(--accent-bg)' : 'var(--bg)', border: `1px solid ${checked ? 'rgba(140,90,40,0.35)' : 'var(--line)'}` }}>
                     <span style={{ fontSize: 12, color: checked ? 'var(--accent)' : 'var(--mid)' }}>{checked ? '✓  ' : ''}{t.l}</span>
-                    <span style={{ fontSize: 11, color: checked ? 'var(--accent)' : 'var(--soft)' }}>{fmtM(t.f)}</span>
+                    <div style={{ textAlign: 'right' }}>
+                      {prestaPrice ? (
+                        <div>
+                          <div style={{ fontSize: 10, color: 'var(--green)', fontWeight: 500 }}>{prestaPrice.toLocaleString()} MAD</div>
+                          <div style={{ fontSize: 9, color: 'var(--soft)', textDecoration: 'line-through' }}>{fmtM(t.f)}</div>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 11, color: checked ? 'var(--accent)' : 'var(--soft)' }}>{fmtM(t.f)}</span>
+                      )}
+                    </div>
                   </button>
                 )
               })}
