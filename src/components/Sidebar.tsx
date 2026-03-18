@@ -11,37 +11,19 @@ const NAV = [
 ]
 
 const Logo = ({ size = 'sm' }: { size?: 'sm' | 'lg' }) => {
-  const fs = size === 'lg' ? 42 : 18
-  const sub = size === 'lg' ? 10 : 8
-  const w = size === 'lg' ? 280 : 148
-  const h = size === 'lg' ? 64 : 44
-  const cx = w / 2
-  const ty = size === 'lg' ? 30 : 20
-  const ly = size === 'lg' ? 40 : 28
-  const sy = size === 'lg' ? 54 : 38
+  if (size === 'sm') return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontFamily: 'Georgia, serif', fontSize: 16, fontStyle: 'italic', fontWeight: 400, color: 'var(--text)', lineHeight: 1.2 }}>Riad Vision</div>
+      <div style={{ height: '0.5px', background: '#8C5A28', margin: '4px 8px 3px', opacity: 0.7 }} />
+      <div style={{ fontFamily: 'Georgia, serif', fontSize: 7, color: '#8C5A28', letterSpacing: 3 }}>MARRAKECH</div>
+    </div>
+  )
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} xmlns="http://www.w3.org/2000/svg">
-      <text
-        fontFamily="Georgia, 'Times New Roman', serif"
-        fontSize={fs}
-        fontWeight="400"
-        fontStyle="italic"
-        fill="#1A1814"
-        x={cx} y={ty}
-        textAnchor="middle"
-        dominantBaseline="hanging"
-      >Riad Vision</text>
-      <line x1={cx - 60} y1={ly} x2={cx + 60} y2={ly} stroke="#8C5A28" strokeWidth="0.7"/>
-      <text
-        fontFamily="Georgia, 'Times New Roman', serif"
-        fontSize={sub}
-        fill="#8C5A28"
-        x={cx} y={sy}
-        textAnchor="middle"
-        dominantBaseline="hanging"
-        letterSpacing="4"
-      >MARRAKECH</text>
-    </svg>
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontFamily: 'Georgia, serif', fontSize: 48, fontStyle: 'italic', fontWeight: 400, color: 'var(--text)', lineHeight: 1.1 }}>Riad Vision</div>
+      <div style={{ height: '1px', background: '#8C5A28', margin: '8px 40px 6px', opacity: 0.7 }} />
+      <div style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: '#8C5A28', letterSpacing: 6 }}>MARRAKECH</div>
+    </div>
   )
 }
 
