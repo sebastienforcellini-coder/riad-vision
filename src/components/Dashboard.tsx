@@ -20,12 +20,12 @@ function Clock() {
 
   return (
     <div style={{ textAlign: 'right' }}>
-      <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontStyle: 'italic', color: 'var(--text)', fontWeight: 300, letterSpacing: 1 }}>{time}</div>
-      <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 2 }}>{dateCapitalized}</div>
-      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 6 }}>
+      <div style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(14px, 2vw, 22px)', fontStyle: 'italic', color: 'var(--text)', fontWeight: 300, letterSpacing: 1 }}>{time}</div>
+      <div style={{ fontSize: 'clamp(9px, 1.2vw, 11px)', color: 'var(--soft)', marginTop: 2 }}>{dateCapitalized}</div>
+      <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', marginTop: 4 }}>
         {(['Europe/Paris', 'Africa/Casablanca'] as const).map(t => (
           <button key={t} onClick={() => setTz(t)} style={{
-            fontSize: 9, padding: '2px 7px', borderRadius: 10, cursor: 'pointer', letterSpacing: 0.5,
+            fontSize: 9, padding: '2px 6px', borderRadius: 10, cursor: 'pointer', letterSpacing: 0.5,
             background: tz === t ? '#8C5A28' : 'transparent',
             color: tz === t ? 'white' : 'var(--soft)',
             border: `1px solid ${tz === t ? '#8C5A28' : 'var(--line)'}`,
@@ -58,11 +58,11 @@ export default function Dashboard({ riads, onNavigate }: { riads: Riad[]; onNavi
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header : logo centré + horloge à droite */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '24px 0 12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '16px 0 12px' }}>
         <div />
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: 'Georgia, serif', fontSize: 52, fontStyle: 'italic', fontWeight: 400, color: 'var(--text)', lineHeight: 1.1 }}>Riad Vision</div>
-          <div style={{ height: 1, background: '#8C5A28', margin: '8px 40px 6px', opacity: 0.7 }} />
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 4vw, 52px)', fontStyle: 'italic', fontWeight: 400, color: 'var(--text)', lineHeight: 1.1 }}>Riad Vision</div>
+          <div style={{ height: 1, background: '#8C5A28', margin: '6px 40px 5px', opacity: 0.7 }} />
           <div style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: '#8C5A28', letterSpacing: 6, textAlign: 'center' }}>MARRAKECH</div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

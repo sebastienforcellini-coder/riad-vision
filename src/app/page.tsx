@@ -55,7 +55,11 @@ export default function HomePage() {
       {/* Mobile topbar */}
       <div className="mobile-topbar">
         <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 4, color: 'var(--mid)', padding: '6px 10px', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>☰</button>
-        <div className="serif" style={{ fontSize: 14, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300 }}>Riad Vision</div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 15, fontStyle: 'italic', color: 'var(--text)', lineHeight: 1.1 }}>Riad Vision</div>
+          <div style={{ height: '0.5px', background: '#8C5A28', margin: '2px 6px', opacity: 0.7 }} />
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 7, color: '#8C5A28', letterSpacing: 2 }}>MARRAKECH</div>
+        </div>
         <div style={{ fontSize: 11, color: 'var(--soft)' }}>{VIEW_LABELS[view]}</div>
       </div>
 
