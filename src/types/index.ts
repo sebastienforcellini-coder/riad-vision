@@ -56,12 +56,31 @@ export interface Estimation {
   prixPerso: string
 }
 
+export type TypeRdv = 'visite' | 'negociation' | 'signature' | 'appel' | 'autre'
+
+export interface Rdv {
+  id: number
+  titre: string
+  type: TypeRdv
+  riadId: number | null
+  date: string       // YYYY-MM-DD
+  heure: string      // HH:MM
+  duree: number      // minutes
+  lieu: string
+  contact: string
+  notes: string
+  fait: boolean
+  createdAt: string
+}
+
 export interface AppState {
   riads: Riad[]
   estimation: Estimation
   prestataires: Prestataire[]
+  rdvs: Rdv[]
   nextId: number
   nextPrestaId: number
+  nextRdvId: number
 }
 
 // ── PRESTATAIRES ──────────────────────────────────────────────────────────

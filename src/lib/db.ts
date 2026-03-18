@@ -49,3 +49,14 @@ export async function deletePrestataire(id: number) {
 export async function saveEstimation(est: Estimation) {
   try { await dbCall({ action: 'upsert', table: 'estimation', id: 1, data: est }) } catch (e) { console.error('saveEstimation:', e) }
 }
+
+export async function saveRdv(rdv: import('@/types').Rdv) {
+  try {
+    const { id, ...data } = rdv
+    await dbCall({ action: 'upsert', table: 'rdvs', id, data })
+  } catch (e) { console.error('saveRdv:', e) }
+}
+
+export async function deleteRdv(id: number) {
+  try { await dbCall({ action: 'delete', table: 'rdvs', id }) } catch {}
+}

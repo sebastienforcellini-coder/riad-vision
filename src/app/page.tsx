@@ -5,14 +5,15 @@ import Sidebar, { Logo } from '@/components/Sidebar'
 import Dashboard from '@/components/Dashboard'
 import { RiadsList, RiadFiche, Estimateur, Resultats, Presentation } from '@/components/views'
 import Prestataires from '@/components/Prestataires'
+import Agenda from '@/components/Agenda'
 import type { Riad } from '@/types'
 
-export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires'
+export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda'
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Accueil', riads: 'Mes Riads', fiche: 'Fiche Riad',
   estimateur: 'Estimateur', resultats: 'Résultats', presentation: 'Présentation',
-  prestataires: 'Prestataires',
+  prestataires: 'Prestataires', agenda: 'Agenda',
 }
 
 export default function HomePage() {
@@ -22,6 +23,7 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
   const [confirmDeletePresta, setConfirmDeletePresta] = useState<number | null>(null)
+  const [confirmDeleteRdv, setConfirmDeleteRdv] = useState<number | null>(null)
 
   const navigate = (v: View, opts?: { riad?: Partial<Riad> }) => {
     if (opts?.riad !== undefined) setEditRiad(opts.riad)
@@ -89,6 +91,20 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Delete rdv modal */}
+      {confirmDeleteRdv && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,24,20,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--white)', borderRadius: 10, padding: 28, maxWidth: 360, width: '90%', border: '1px solid var(--line)' }}>
+            <div className="serif" style={{ fontSize: 20, fontStyle: 'italic', fontWeight: 300, marginBottom: 10 }}>Supprimer ce RDV ?</div>
+            <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Cette action est irréversible.</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setConfirmDeleteRdv(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
+              <button onClick={() => { app.deleteRdv(confirmDeleteRdv); setConfirmDeleteRdv(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', minHeight: '100vh' }}>
         <div className="desktop-sidebar">
           <Sidebar currentView={view} onNavigate={navigate} />
@@ -127,6 +143,16 @@ export default function HomePage() {
               onAdd={app.addPrestataire}
               onEdit={app.updatePrestataire}
               onDelete={id => setConfirmDeletePresta(id)}
+            />
+          )}
+          {view === 'agenda' && (
+            <Agenda
+              rdvs={app.state.rdvs}
+              riads={app.state.riads}
+              onAdd={app.addRdv}
+              onEdit={app.updateRdv}
+              onDelete={id => setConfirmDeleteRdv(id)}
+              onToggleFait={app.updateRdv}
             />
           )}
         </main>

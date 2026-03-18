@@ -154,3 +154,14 @@ export const LIBELLES_TRAVAUX = [
   { label: 'Sanitaires / WC (unité)',          type: 'unite'   as const },
   { label: 'Autre (libellé libre)',            type: 'm2'      as const },
 ]
+
+// ── AGENDA ────────────────────────────────────────────────────────────────
+import type { TypeRdv } from '@/types'
+
+export const TYPES_RDV: Record<TypeRdv, { label: string; color: string; bg: string }> = {
+  visite:      { label: 'Visite',       color: '#3A7D5C', bg: '#EAF3EC' },
+  negociation: { label: 'Négociation',  color: '#8C5A28', bg: '#F5EDE3' },
+  signature:   { label: 'Signature',    color: '#1A1814', bg: '#EDEAE3' },
+  appel:       { label: 'Appel',        color: '#185FA5', bg: '#E6F1FB' },
+  autre:       { label: 'Autre',        color: '#6B6560', bg: '#F0EDE8' },
+}
