@@ -22,6 +22,15 @@ export default function Dashboard({ riads, onNavigate }: { riads: Riad[]; onNavi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Logo centré en haut */}
+      <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+        <div style={{ display: 'inline-block' }}>
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 38, fontStyle: 'italic', fontWeight: 400, color: 'var(--text)', lineHeight: 1.1 }}>Riad Vision</div>
+          <div style={{ height: 1, background: '#8C5A28', margin: '6px 0 5px', opacity: 0.7 }} />
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 10, color: '#8C5A28', letterSpacing: 5, textAlign: 'center' }}>MARRAKECH</div>
+        </div>
+      </div>
+
       <PageHeader title="Bonjour," subtitle="Vue d'ensemble du portefeuille" />
 
       <div className="grid-4col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
