@@ -94,9 +94,6 @@ export default function HomePage() {
           <Sidebar currentView={view} onNavigate={navigate} />
         </div>
         <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--line)' }}>
-            <Logo size="lg" />
-          </div>
           {view === 'dashboard' && <Dashboard riads={app.state.riads} onNavigate={navigate} />}
           {view === 'riads' && (
             <RiadsList
