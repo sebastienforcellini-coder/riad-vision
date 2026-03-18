@@ -71,17 +71,20 @@ function Calendrier({ rdvs, riads, onNewRdv, onEditRdv }: {
       </div>
 
       {/* Grille */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+      <div style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
         {/* En-têtes jours */}
-        {JOURS.map(j => (
-          <div key={j} style={{ textAlign: 'center', fontSize: 10, color: 'var(--soft)', padding: '4px 0', fontWeight: 500, letterSpacing: 0.5 }}>{j}</div>
-        ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'var(--bg)', borderBottom: '1px solid var(--line)' }}>
+          {JOURS.map(j => (
+            <div key={j} style={{ textAlign: 'center', fontSize: 10, color: 'var(--soft)', padding: '8px 0', fontWeight: 500, letterSpacing: 0.5 }}>{j}</div>
+          ))}
+        </div>
 
-        {/* Cases */}
+        {/* Cases en grille */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {cells.map((day, i) => {
-          if (!day) return <div key={i} />
-          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-          const dayRdvs = rdvsByDate[dateStr] || []
+          const col = i % 7
+          const dateStr = day ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : ''
+          const dayRdvs = dateStr ? (rdvsByDate[dateStr] || []) : []
           const hasRdv = dayRdvs.length > 0
           const isToday = dateStr === todayStr
           const isHovered = hovered === dateStr
@@ -89,45 +92,48 @@ function Calendrier({ rdvs, riads, onNewRdv, onEditRdv }: {
           return (
             <div
               key={i}
-              onMouseEnter={e => { if (hasRdv) { setHovered(dateStr); setTooltipPos({ x: e.clientX, y: e.clientY }) } }}
+              onMouseEnter={e => { if (hasRdv && dateStr) { setHovered(dateStr); setTooltipPos({ x: e.clientX, y: e.clientY }) } }}
               onMouseMove={e => { if (hasRdv) setTooltipPos({ x: e.clientX, y: e.clientY }) }}
               onMouseLeave={() => setHovered(null)}
-              onClick={() => hasRdv ? onEditRdv(dayRdvs[0]) : onNewRdv(dateStr)}
+              onClick={() => { if (!day || !dateStr) return; hasRdv ? onEditRdv(dayRdvs[0]) : onNewRdv(dateStr) }}
               style={{
                 position: 'relative',
                 textAlign: 'center',
-                padding: '8px 4px',
-                borderRadius: 8,
-                cursor: 'pointer',
-                background: isHovered ? 'var(--accent-bg)' : isToday ? '#F5EDE3' : 'transparent',
-                border: isToday ? '1px solid #8C5A28' : '1px solid transparent',
-                transition: 'all 0.1s',
+                padding: '10px 6px',
+                minHeight: 60,
+                cursor: day ? 'pointer' : 'default',
+                background: isHovered ? 'var(--accent-bg)' : isToday ? '#FDF6EE' : 'var(--white)',
+                borderRight: col < 6 ? '1px solid var(--line)' : 'none',
+                borderBottom: i < cells.length - 7 ? '1px solid var(--line)' : 'none',
+                transition: 'background 0.1s',
               }}
             >
-              {/* Numéro du jour */}
-              <div style={{
-                fontSize: 13,
-                color: isToday ? '#8C5A28' : 'var(--text)',
-                fontWeight: isToday ? 600 : 400,
-                lineHeight: 1,
-                marginBottom: hasRdv ? 4 : 0,
-              }}>{day}</div>
+              {day && <>
+                {/* Numéro du jour */}
+                <div style={{
+                  fontSize: 13, lineHeight: 1, marginBottom: hasRdv ? 6 : 0,
+                  color: isToday ? 'white' : 'var(--text)',
+                  fontWeight: isToday ? 600 : 400,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: isToday ? 24 : 'auto', height: isToday ? 24 : 'auto',
+                  background: isToday ? '#8C5A28' : 'transparent',
+                  borderRadius: isToday ? '50%' : 0,
+                }}>{day}</div>
 
-              {/* Points RDV */}
-              {hasRdv && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-                  {dayRdvs.slice(0, 3).map((r, idx) => (
-                    <div key={idx} style={{
-                      width: 5, height: 5, borderRadius: '50%',
-                      background: r.fait ? 'var(--soft)' : TYPES_RDV[r.type].color,
-                    }} />
-                  ))}
-                  {dayRdvs.length > 3 && <div style={{ fontSize: 8, color: 'var(--soft)', lineHeight: '5px' }}>+{dayRdvs.length - 3}</div>}
-                </div>
-              )}
+                {/* Points RDV */}
+                {hasRdv && (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 3, flexWrap: 'wrap' }}>
+                    {dayRdvs.slice(0, 3).map((r, idx) => (
+                      <div key={idx} style={{ width: 6, height: 6, borderRadius: '50%', background: r.fait ? 'var(--soft)' : TYPES_RDV[r.type].color }} />
+                    ))}
+                    {dayRdvs.length > 3 && <div style={{ fontSize: 8, color: 'var(--soft)' }}>+{dayRdvs.length - 3}</div>}
+                  </div>
+                )}
+              </>}
             </div>
           )
         })}
+        </div>
       </div>
 
       {/* Tooltip au survol */}
