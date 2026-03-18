@@ -1,0 +1,23 @@
+{
+  "name": "Riad Vision · Marrakech",
+  "short_name": "Riad Vision",
+  "description": "Gestion et estimation travaux de riads à Marrakech",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5EDE3",
+  "theme_color": "#8C5A28",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

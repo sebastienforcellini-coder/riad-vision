@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppState } from '@/lib/useAppState'
 import Sidebar, { Logo } from '@/components/Sidebar'
 import Dashboard from '@/components/Dashboard'
@@ -27,6 +27,15 @@ export default function HomePage() {
   const [confirmDeletePresta, setConfirmDeletePresta] = useState<number | null>(null)
   const [confirmDeleteRdv, setConfirmDeleteRdv] = useState<number | null>(null)
   const [confirmDeleteProprio, setConfirmDeleteProprio] = useState<number | null>(null)
+  const [isOffline, setIsOffline] = useState(false)
+
+  useEffect(() => {
+    const update = () => setIsOffline(!navigator.onLine)
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    setIsOffline(!navigator.onLine)
+    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update) }
+  }, [])
 
   const navigate = (v: View, opts?: { riad?: Partial<Riad> }) => {
     if (opts?.riad !== undefined) setEditRiad(opts.riad)
@@ -53,7 +62,12 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Mobile topbar */}
+      {/* Bandeau hors-ligne */}
+      {isOffline && (
+        <div style={{ background: '#8C5A28', color: 'white', textAlign: 'center', padding: '6px', fontSize: 12, letterSpacing: 0.5 }}>
+          📵 Mode hors-ligne — données en cache disponibles
+        </div>
+      )}
       <div className="mobile-topbar">
         <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 4, color: 'var(--mid)', padding: '6px 10px', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>☰</button>
         <div style={{ textAlign: 'center' }}>

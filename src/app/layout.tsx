@@ -4,6 +4,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Riad Vision · Marrakech',
   description: 'Gestion et estimation travaux de riads à Marrakech',
+  manifest: '/manifest.json',
   icons: {
     icon: '/favicon.svg',
     apple: '/apple-touch-icon.png',
@@ -26,6 +27,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <head>
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#8C5A28" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Riad Vision" />
