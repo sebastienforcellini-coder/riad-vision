@@ -155,6 +155,7 @@ export default function HomePage() {
               onEstimate={startEstimate}
               onPresent={startPresentation}
               onDelete={id => setConfirmDelete(id)}
+              onToggleCategorie={r => app.updateRiad({ ...r, categorie: (r.categorie ?? 'portefeuille') === 'portefeuille' ? 'prospection' : 'portefeuille' })}
             />
           )}
           {view === 'fiche' && (

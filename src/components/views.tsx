@@ -12,37 +12,28 @@ const EMPTY_RIAD: Partial<Riad> = {
 }
 
 // ── RIADS LIST ──────────────────────────────────────────────────────────────
-export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelete }: {
+export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelete, onToggleCategorie }: {
   riads: Riad[]; onNew: () => void; onEdit: (r: Riad) => void
   onEstimate: (r: Riad) => void; onPresent: (r: Riad) => void; onDelete: (id: number) => void
+  onToggleCategorie: (r: Riad) => void
 }) {
-  return (
-    <div>
-      <PageHeader title="Mes riads" subtitle={riads.length + ' biens'} action={<Btn label="Nouveau riad" onClick={onNew} primary sm />} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {riads.map(r => {
+  const portefeuille = riads.filter(r => (r.categorie ?? 'portefeuille') === 'portefeuille')
+  const prospection = riads.filter(r => r.categorie === 'prospection')
+
+  const RiadCard = (r: Riad) => {
           const prix = r.prixN ?? r.prixD
           const m2mad = prix && r.surface ? Math.round(prix / r.surface) : null
           const m2eur = m2mad ? Math.round(m2mad / 11) : null
           return (
             <Card key={r.id} style={{ padding: 0, overflow: 'hidden' }}>
-              {/* Photo principale si disponible */}
               {r.photos && r.photos.length > 0 && (
                 <div style={{ height: 140, overflow: 'hidden', cursor: 'pointer' }} onClick={() => onEdit(r)}>
-                  <img
-                    src={`https://nsogcsmriufjcymlmatz.supabase.co/storage/v1/object/public/riad-photos/${r.photos[0]}`}
-                    alt={r.nom}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                  <img src={`https://nsogcsmriufjcymlmatz.supabase.co/storage/v1/object/public/riad-photos/${r.photos[0]}`} alt={r.nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
               )}
               <div className="riad-card-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 20px' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                    {/* Badge catégorie */}
-                    {r.categorie === 'prospection' && (
-                      <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 8, background: '#E6F1FB', color: '#185FA5', border: '1px solid rgba(24,95,165,0.25)', fontWeight: 500 }}>◆ Prospection</span>
-                    )}
                     {r.typeBien && r.typeBien !== 'riad' && (
                       <span style={{ fontSize: 10, color: 'var(--mid)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 4, padding: '2px 7px' }}>{TYPES_BIEN[r.typeBien]}</span>
                     )}
@@ -60,14 +51,13 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
                     {r.agenceSource ? <span style={{ marginLeft: 8, fontSize: 11 }}>· {r.agenceSource}</span> : ''}
                   </div>
                   <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                    {[r.surface ? r.surface + ' m²' : null, r.niveaux ? r.niveaux + ' niv.' : null, r.chambres ? r.chambres + ' ch.' : null, r.etat ? ETATS[r.etat] : null].filter(Boolean).map(t => (
-                      <span key={t} style={{ fontSize: 12, color: 'var(--mid)' }}>{t}</span>
-                    ))}
+                    {r.surface && <span style={{ fontSize: 12, color: 'var(--mid)' }}>{r.surface} m²</span>}
+                    {r.niveaux && <span style={{ fontSize: 12, color: 'var(--mid)' }}>{r.niveaux} niv.</span>}
+                    {r.chambres && <span style={{ fontSize: 12, color: 'var(--mid)' }}>{r.chambres} ch.</span>}
+                    {r.etat && <span style={{ fontSize: 12, color: 'var(--mid)' }}>{ETATS[r.etat]}</span>}
                   </div>
-                  {r.proximite && <div style={{ fontSize: 11, color: 'var(--soft)', marginTop: 4 }}>📍 {r.proximite}</div>}
-                  {r.potentiel && <div style={{ fontSize: 12, color: 'var(--soft)', marginTop: 6, fontStyle: 'italic' }}>{r.potentiel}</div>}
                 </div>
-                <div className="riad-card-price" style={{ textAlign: 'right', minWidth: 160 }}>
+                <div style={{ textAlign: 'right', minWidth: 120 }}>
                   {prix ? (
                     <>
                       <div style={{ fontSize: 11, color: 'var(--soft)', marginBottom: 2 }}>Prix {r.prixN ? 'négocié' : 'demandé'}</div>
@@ -84,15 +74,52 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
                     <Btn label="Fiche" onClick={() => onEdit(r)} sm />
                     <button onClick={() => onDelete(r.id)} style={{ padding: '6px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer', background: 'transparent', border: '1px solid transparent', color: 'var(--soft)', transition: 'all 0.15s' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#C0392B'; (e.currentTarget as HTMLElement).style.borderColor = '#f0b8b5' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--soft)'; (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}>
-                      ✕
-                    </button>
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--soft)'; (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}>✕</button>
                   </div>
+                  {/* Basculer catégorie */}
+                  <button onClick={() => onToggleCategorie(r)} style={{ marginTop: 6, fontSize: 9, padding: '2px 8px', borderRadius: 8, cursor: 'pointer', border: '1px solid var(--line)', background: 'transparent', color: 'var(--soft)' }}>
+                    {(r.categorie ?? 'portefeuille') === 'portefeuille' ? '→ Déplacer en Prospection' : '→ Déplacer en Portefeuille'}
+                  </button>
                 </div>
               </div>
             </Card>
           )
-        })}
+  }
+
+  return (
+    <div>
+      <PageHeader title="Mes riads" subtitle={riads.length + ' biens'} action={<Btn label="Nouveau riad" onClick={onNew} primary sm />} />
+
+      {/* Section Portefeuille */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 10, height: 10, background: '#8C5A28', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', flexShrink: 0 }} />
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>Portefeuille</div>
+          <div style={{ fontSize: 12, color: 'var(--soft)' }}>{portefeuille.length} bien{portefeuille.length > 1 ? 's' : ''}</div>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+        </div>
+        {portefeuille.length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic', padding: '12px 0' }}>Aucun bien en portefeuille</div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {portefeuille.map(r => RiadCard(r))}
+        </div>
+      </div>
+
+      {/* Section Prospection */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 10, height: 10, background: '#185FA5', borderRadius: 2, transform: 'rotate(45deg)', flexShrink: 0 }} />
+          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>Prospection</div>
+          <div style={{ fontSize: 12, color: 'var(--soft)' }}>{prospection.length} bien{prospection.length > 1 ? 's' : ''} repéré{prospection.length > 1 ? 's' : ''}</div>
+          <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+        </div>
+        {prospection.length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic', padding: '12px 0' }}>Aucun bien en prospection — ajoutez des biens repérés sur le terrain</div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {prospection.map(r => RiadCard(r))}
+        </div>
       </div>
     </div>
   )
