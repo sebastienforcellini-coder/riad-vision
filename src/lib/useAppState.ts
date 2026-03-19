@@ -1,16 +1,17 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { AppState, Riad, Estimation, Prestataire, Rdv, Proprietaire, ZonesSurfaces } from '@/types'
-import { loadFromDB, saveRiad, deleteRiad as dbDeleteRiad, savePrestataire, deletePrestataire as dbDeletePresta, saveEstimation, saveRdv, deleteRdv as dbDeleteRdv, saveProprietaire, deleteProprietaire as dbDeleteProprio } from './db'
+import { loadFromDB, saveRiad, deleteRiad as dbDeleteRiad, savePrestataire, deletePrestataire as dbDeletePresta, saveEstimation, saveRdv, deleteRdv as dbDeleteRdv, saveProprietaire, deleteProprietaire as dbDeleteProprio, saveMarchePrix } from './db'
 
-const LS_KEY = 'riad-vision-v7'
+import { QUARTIERS_MARCHE_DEFAULT } from './constants'
+const LS_KEY = 'riad-vision-v8'
 
 const DEFAULT_ZONES: ZonesSurfaces = { patio: 0, salon: 0, cuisine: 0, chambres: 0, sdb: 0, terrasse: 0, rooftop: 0, circulation: 0, autres: 0 }
 
 const DEMO_RIADS: Riad[] = [
-  { id: 1, categorie: 'portefeuille' as const, nom: 'Riad Almas', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Derb Sidi Bouamar', quartier: 'Mouassine', proximite: '5 min Jemaa el-Fna', vue: '', lat: 31.6295, lng: -7.9883, surface: 280, niveaux: 3, chambres: 6, sdb: 6, terrasse: 40, terrasse2: null, terrasse3: null, etat: 'moyen', prixD: 9240000, prixN: 8400000, statut: 'negociation', titre: true, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false, potentiel: "Maison d'hôtes — 8 chambres", contraintes: 'Plomberie à refaire', notes: "Zellige d'origine conservé", photos: [], tarifNuit: 1800, tauxOccupation: 65, createdAt: new Date().toISOString() },
-  { id: 2, categorie: 'portefeuille' as const, nom: 'Riad El Bahja', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Derb Chorfa Lakbir', quartier: 'Bab Doukkala', proximite: '', vue: '', lat: 31.6340, lng: -7.9921, surface: 180, niveaux: 2, chambres: 4, sdb: 4, terrasse: 20, terrasse2: null, terrasse3: null, etat: 'bon', prixD: 6600000, prixN: 5940000, statut: 'proposition', titre: true, meuble: true, enActivite: false, piscine: false, bassin: true, clim: true, potentiel: 'Résidence principale', contraintes: 'R+2 max', notes: '', photos: [], tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString() },
-  { id: 3, categorie: 'prospection' as const, nom: 'Riad Dar Salam', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Rue Bab Taghzout', quartier: 'Kasbah', proximite: '', vue: 'Vue sur les toits', lat: 31.6180, lng: -7.9867, surface: 350, niveaux: 4, chambres: null, sdb: null, terrasse: null, terrasse2: null, terrasse3: null, etat: 'mauvais', prixD: null, prixN: null, statut: 'visite', titre: false, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false, potentiel: 'Grand projet — 12 chambres', contraintes: 'Toiture à reprendre', notes: 'R+4, potentiel rare', photos: [], tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString() },
+  { id: 1, categorie: 'portefeuille' as const, nom: 'Riad Almas', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Derb Sidi Bouamar', quartier: 'Mouassine', proximite: '5 min Jemaa el-Fna', vue: '', lat: 31.6295, lng: -7.9883, quartierMarche: 'mouassine', surface: 280, niveaux: 3, chambres: 6, sdb: 6, terrasse: 40, terrasse2: null, terrasse3: null, etat: 'moyen', prixD: 9240000, prixN: 8400000, statut: 'negociation', titre: true, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false, potentiel: "Maison d'hôtes — 8 chambres", contraintes: 'Plomberie à refaire', notes: "Zellige d'origine conservé", photos: [], tarifNuit: 1800, tauxOccupation: 65, createdAt: new Date().toISOString() },
+  { id: 2, categorie: 'portefeuille' as const, nom: 'Riad El Bahja', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Derb Chorfa Lakbir', quartier: 'Bab Doukkala', proximite: '', vue: '', lat: 31.6340, lng: -7.9921, quartierMarche: 'bab_doukkala', surface: 180, niveaux: 2, chambres: 4, sdb: 4, terrasse: 20, terrasse2: null, terrasse3: null, etat: 'bon', prixD: 6600000, prixN: 5940000, statut: 'proposition', titre: true, meuble: true, enActivite: false, piscine: false, bassin: true, clim: true, potentiel: 'Résidence principale', contraintes: 'R+2 max', notes: '', photos: [], tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString() },
+  { id: 3, categorie: 'prospection' as const, nom: 'Riad Dar Salam', typeBien: 'riad', reference: '', agenceSource: '', lienSource: '', adresse: 'Rue Bab Taghzout', quartier: 'Kasbah', proximite: '', vue: 'Vue sur les toits', lat: 31.6180, lng: -7.9867, quartierMarche: 'kasbah', surface: 350, niveaux: 4, chambres: null, sdb: null, terrasse: null, terrasse2: null, terrasse3: null, etat: 'mauvais', prixD: null, prixN: null, statut: 'visite', titre: false, meuble: false, enActivite: false, piscine: false, bassin: false, clim: false, potentiel: 'Grand projet — 12 chambres', contraintes: 'Toiture à reprendre', notes: 'R+4, potentiel rare', photos: [], tarifNuit: null, tauxOccupation: null, createdAt: new Date().toISOString() },
 ]
 
 const DEFAULT_STATE: AppState = {
@@ -18,6 +19,7 @@ const DEFAULT_STATE: AppState = {
   estimation: { riadId: null, prestaId: null, mode: 'rapide', niveau: 'complete', surface: 200, zones: { ...DEFAULT_ZONES }, transf: [], prixPerso: '' },
   prestataires: [], rdvs: [], proprietaires: [],
   nextId: 4, nextPrestaId: 1, nextRdvId: 1, nextProprioId: 1,
+  marchePrix: { ...QUARTIERS_MARCHE_DEFAULT },
 }
 
 export function useAppState() {
@@ -72,5 +74,7 @@ export function useAppState() {
   const updateProprietaire = useCallback((updated: Proprietaire) => { setState(s => { setTimeout(() => saveProprietaire(updated), 0); return { ...s, proprietaires: s.proprietaires.map(p => p.id === updated.id ? updated : p) } }) }, [])
   const deleteProprietaire = useCallback((id: number) => { setState(s => { setTimeout(() => dbDeleteProprio(id), 0); return { ...s, proprietaires: s.proprietaires.filter(p => p.id !== id) } }) }, [])
 
-  return { state, loaded, addRiad, updateRiad, deleteRiad, setEstimation, addPrestataire, updatePrestataire, deletePrestataire, addRdv, updateRdv, deleteRdv, addProprietaire, updateProprietaire, deleteProprietaire }
+  const setMarchePrix = useCallback((prix: typeof state.marchePrix) => { setState(s => { setTimeout(() => saveMarchePrix(prix as unknown as Record<string, unknown>), 0); return { ...s, marchePrix: prix } }) }, [])
+
+  return { state, loaded, addRiad, updateRiad, deleteRiad, setEstimation, addPrestataire, updatePrestataire, deletePrestataire, addRdv, updateRdv, deleteRdv, addProprietaire, updateProprietaire, deleteProprietaire, setMarchePrix }
 }

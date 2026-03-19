@@ -9,14 +9,15 @@ import Agenda from '@/components/Agenda'
 import CRM from '@/components/CRM'
 import Comparateur from '@/components/Comparateur'
 import CarteMarrakech from '@/components/CarteMarrakech'
+import Marche from '@/components/Marche'
 import type { Riad } from '@/types'
 
-export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda' | 'crm' | 'comparateur' | 'carte'
+export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda' | 'crm' | 'comparateur' | 'carte' | 'marche'
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Accueil', riads: 'Mes Riads', fiche: 'Fiche Riad',
   estimateur: 'Estimateur', resultats: 'Résultats', presentation: 'Présentation',
-  prestataires: 'Prestataires', agenda: 'Agenda', crm: 'Contacts', comparateur: 'Comparateur', carte: 'Carte',
+  prestataires: 'Prestataires', agenda: 'Agenda', crm: 'Contacts', comparateur: 'Comparateur', carte: 'Carte', marche: 'Marché',
 }
 
 export default function HomePage() {
@@ -161,6 +162,7 @@ export default function HomePage() {
           {view === 'fiche' && (
             <RiadFiche
               initial={editRiad}
+              marchePrix={app.state.marchePrix}
               onSave={r => { if (r.id) app.updateRiad(r as Riad); else app.addRiad(r as Omit<Riad, 'id' | 'createdAt'>); navigate('riads') }}
               onCancel={() => navigate('riads')}
             />
@@ -197,6 +199,9 @@ export default function HomePage() {
           )}
           {view === 'carte' && (
             <CarteMarrakech riads={app.state.riads} onSelectRiad={r => navigate('fiche', { riad: r })} />
+          )}
+          {view === 'marche' && (
+            <Marche marchePrix={app.state.marchePrix} onSave={app.setMarchePrix} />
           )}
           {view === 'crm' && (
             <CRM

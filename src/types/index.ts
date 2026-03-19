@@ -17,6 +17,7 @@ export interface Riad {
   statut: Statut | ''
   adresse: string
   quartier: string
+  quartierMarche: string | null   // clé pour les fourchettes marché
   proximite: string
   vue: string
   lat: number | null        // coordonnées GPS
@@ -116,6 +117,17 @@ export interface Proprietaire {
   createdAt: string
 }
 
+export interface FourchettePrix {
+  min: number
+  max: number
+}
+
+export interface QuartierMarche {
+  label: string
+  brut: FourchettePrix
+  renove: FourchettePrix
+}
+
 export interface AppState {
   riads: Riad[]
   estimation: Estimation
@@ -126,6 +138,7 @@ export interface AppState {
   nextPrestaId: number
   nextRdvId: number
   nextProprioId: number
+  marchePrix: Record<string, QuartierMarche>
 }
 
 // ── PRESTATAIRES ──────────────────────────────────────────────────────────

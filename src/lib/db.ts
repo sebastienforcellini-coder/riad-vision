@@ -68,3 +68,7 @@ export async function saveProprietaire(p: import('@/types').Proprietaire) {
 export async function deleteProprietaire(id: number) {
   try { await dbCall({ action: 'delete', table: 'proprietaires', id }) } catch {}
 }
+
+export async function saveMarchePrix(data: Record<string, unknown>) {
+  try { await dbCall({ action: 'upsert', table: 'estimation', id: 2, data }) } catch (e) { console.error('saveMarchePrix:', e) }
+}

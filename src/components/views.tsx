@@ -1,10 +1,11 @@
 'use client'
 import { useState } from 'react'
 import type { Riad, Estimation, TypeBien, CategorieRiad } from '@/types'
-import { LEVELS, ETATS, ZONES, TRANSFORMATIONS, QUARTIERS, TYPES_BIEN, STATUTS, CATEGORIES_RIAD, fmtM, fmtMAD, fmtEUR, calcEstimation } from '@/lib/constants'
+import { LEVELS, ETATS, ZONES, TRANSFORMATIONS, QUARTIERS, TYPES_BIEN, STATUTS, CATEGORIES_RIAD, QUARTIERS_MARCHE_DEFAULT, fmtM, fmtMAD, fmtEUR, calcEstimation } from '@/lib/constants'
 import { Card, SectionLabel, Divider, StatutChip, FieldInput, FieldSelect, StatRow, PrixM2Block, PageHeader, Btn, Chip } from '@/components/ui'
 import PhotoGallery from '@/components/PhotoGallery'
 import { BtnMaps } from '@/components/CarteMarrakech'
+import { AnalysePrix } from '@/components/Marche'
 
 const EMPTY_RIAD: Partial<Riad> = {
   categorie: 'portefeuille', typeBien: 'riad', titre: false, meuble: false, enActivite: false,
@@ -126,8 +127,8 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
 }
 
 // ── RIAD FICHE ──────────────────────────────────────────────────────────────
-export function RiadFiche({ initial, onSave, onCancel }: {
-  initial: Partial<Riad> | null; onSave: (r: Partial<Riad>) => void; onCancel: () => void
+export function RiadFiche({ initial, marchePrix, onSave, onCancel }: {
+  initial: Partial<Riad> | null; marchePrix?: Record<string, import('@/types').QuartierMarche>; onSave: (r: Partial<Riad>) => void; onCancel: () => void
 }) {
   const [r, setR] = useState<Partial<Riad>>({ ...EMPTY_RIAD, ...(initial ?? {}) })
   const [importUrl, setImportUrl] = useState('')
@@ -233,6 +234,29 @@ export function RiadFiche({ initial, onSave, onCancel }: {
           </div>
           <FieldInput label="Adresse / Derb" value={r.adresse} onChange={v => set('adresse', v)} placeholder="Derb Sidi Bouamar…" />
           <FieldSelect label="Quartier" value={r.quartier ?? ''} onChange={v => set('quartier', v)} options={QUARTIERS.map(q => [q, q || '— Quartier —'])} />
+          {/* Quartier marché pour analyse prix */}
+          <div style={{ marginBottom: 14 }}>
+            <div className="label">Zone marché (analyse prix)</div>
+            <select className="field-input" value={r.quartierMarche ?? ''} onChange={e => set('quartierMarche', e.target.value || null)}>
+              <option value="">— Sélectionner une zone —</option>
+              {Object.entries(QUARTIERS_MARCHE_DEFAULT).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+          </div>
+          {/* Analyse prix */}
+          {marchePrix && r.quartierMarche && (r.prixD || r.prixN) && r.surface && (
+            <div style={{ marginBottom: 14 }}>
+              <div className="label" style={{ marginBottom: 6 }}>Analyse du prix</div>
+              <AnalysePrix
+                prix={r.prixN ?? r.prixD ?? null}
+                surface={r.surface ?? null}
+                quartierKey={r.quartierMarche ?? null}
+                etat={r.etat ?? null}
+                marchePrix={marchePrix}
+              />
+            </div>
+          )}
           <FieldSelect label="Statut" value={r.statut ?? ''} onChange={v => set('statut', v)}
             options={[['', '— Statut —'], ['visite', 'Visite planifiée'], ['negociation', 'En négociation'], ['proposition', 'Proposition envoyée'], ['signe', 'Signé'], ['archive', 'Archivé']]} />
           <FieldSelect label="État du bien" value={r.etat ?? ''} onChange={v => set('etat', v)}

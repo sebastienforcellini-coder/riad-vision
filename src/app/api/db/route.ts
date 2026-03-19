@@ -10,12 +10,13 @@ const TABLES = ['riads', 'prestataires', 'estimation', 'rdvs', 'proprietaires']
 
 export async function GET() {
   try {
-    const [riadsRes, prestaRes, estRes, rdvsRes, proprioRes] = await Promise.all([
+    const [riadsRes, prestaRes, estRes, rdvsRes, proprioRes, marcheRes] = await Promise.all([
       supabase.from('riads').select('id, data').order('id'),
       supabase.from('prestataires').select('id, data').order('id'),
       supabase.from('estimation').select('data').eq('id', 1).maybeSingle(),
       supabase.from('rdvs').select('id, data').order('id'),
       supabase.from('proprietaires').select('id, data').order('id'),
+      supabase.from('estimation').select('data').eq('id', 2).maybeSingle(),
     ])
     return NextResponse.json({
       riads: (riadsRes.data || []).map((r: any) => ({ ...r.data, id: r.id })),
@@ -23,6 +24,7 @@ export async function GET() {
       estimation: estRes.data?.data ?? null,
       rdvs: (rdvsRes.data || []).map((r: any) => ({ ...r.data, id: r.id })),
       proprietaires: (proprioRes.data || []).map((r: any) => ({ ...r.data, id: r.id })),
+      marchePrix: marcheRes?.data?.data ?? null,
     })
   } catch (e) { return NextResponse.json({ error: String(e) }, { status: 500 }) }
 }

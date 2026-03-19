@@ -197,3 +197,20 @@ export const CATEGORIES_RIAD = {
   portefeuille: { label: 'Portefeuille',  color: '#8C5A28', bg: '#F5EDE3', desc: 'Bien en vente ou à rénover' },
   prospection:  { label: 'Prospection',   color: '#185FA5', bg: '#E6F1FB', desc: 'Bien repéré en terrain' },
 }
+
+// ── FOURCHETTES MARCHÉ PAR QUARTIER ──────────────────────────────────────
+export const QUARTIERS_MARCHE_DEFAULT: Record<string, {
+  label: string
+  brut: { min: number; max: number }
+  renove: { min: number; max: number }
+}> = {
+  mouassine:     { label: 'Mouassine / Dar Bacha',         brut: { min: 22000, max: 35000 }, renove: { min: 40000, max: 65000 } },
+  riad_zitoun:   { label: 'Riad Zitoun / Jemaa el-Fna',   brut: { min: 18000, max: 25000 }, renove: { min: 35000, max: 55000 } },
+  kasbah:        { label: 'Kasbah / Mellah',               brut: { min: 15000, max: 22000 }, renove: { min: 28000, max: 45000 } },
+  bab_doukkala:  { label: 'Bab Doukkala',                  brut: { min: 12000, max: 18000 }, renove: { min: 22000, max: 35000 } },
+  bab_agnaw:     { label: 'Bab Agnaw / Sidi Mimoun',       brut: { min: 10000, max: 16000 }, renove: { min: 18000, max: 30000 } },
+  medina:        { label: 'Médina (général)',               brut: { min: 9000,  max: 15000 }, renove: { min: 15000, max: 40000 } },
+  palmeraie:     { label: 'Palmeraie / Hivernage',         brut: { min: 15000, max: 25000 }, renove: { min: 35000, max: 60000 } },
+  gueliz:        { label: 'Guéliz / Ville nouvelle',       brut: { min: 13000, max: 20000 }, renove: { min: 20000, max: 40000 } },
+  autre:         { label: 'Autre / Non précisé',           brut: { min: 9000,  max: 20000 }, renove: { min: 15000, max: 40000 } },
+}
