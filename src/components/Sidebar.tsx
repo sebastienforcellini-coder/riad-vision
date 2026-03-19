@@ -5,6 +5,7 @@ const NAV = [
   { k: 'dashboard'     as View, l: 'Accueil'      },
   { k: 'riads'         as View, l: 'Mes riads'     },
   { k: 'comparateur'   as View, l: 'Comparer'       },
+  { k: 'carte'         as View, l: 'Carte'          },
   { k: 'estimateur'    as View, l: 'Estimateur'    },
   { k: 'resultats'     as View, l: 'Résultats'     },
   { k: 'presentation'  as View, l: 'Présentation'  },

@@ -4,8 +4,11 @@ export type TypeBien = 'riad' | 'douirya' | 'maison_hotes' | 'villa' | 'appartem
 export type NiveauRenovation = 'rafraich' | 'standard' | 'complete' | 'luxe'
 export type ModeEstimation = 'rapide' | 'detaille'
 
+export type CategorieRiad = 'portefeuille' | 'prospection'
+
 export interface Riad {
   id: number
+  categorie: CategorieRiad   // portefeuille actif ou prospection terrain
   nom: string
   typeBien: TypeBien | ''
   reference: string
@@ -16,6 +19,8 @@ export interface Riad {
   quartier: string
   proximite: string
   vue: string
+  lat: number | null        // coordonnées GPS
+  lng: number | null
   surface: number | null
   niveaux: number | null
   chambres: number | null

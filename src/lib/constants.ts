@@ -191,3 +191,9 @@ export const TYPES_INTERACTION = {
   whatsapp: { label: 'WhatsApp', emoji: '💬' },
   autre:    { label: 'Autre',    emoji: '📝' },
 }
+
+// ── CATÉGORIES RIAD ──────────────────────────────────────────────────────
+export const CATEGORIES_RIAD = {
+  portefeuille: { label: 'Portefeuille',  color: '#8C5A28', bg: '#F5EDE3', desc: 'Bien en vente ou à rénover' },
+  prospection:  { label: 'Prospection',   color: '#185FA5', bg: '#E6F1FB', desc: 'Bien repéré en terrain' },
+}

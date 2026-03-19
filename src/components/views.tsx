@@ -1,13 +1,14 @@
 'use client'
 import { useState } from 'react'
-import type { Riad, Estimation, TypeBien } from '@/types'
-import { LEVELS, ETATS, ZONES, TRANSFORMATIONS, QUARTIERS, TYPES_BIEN, STATUTS, fmtM, fmtMAD, fmtEUR, calcEstimation } from '@/lib/constants'
+import type { Riad, Estimation, TypeBien, CategorieRiad } from '@/types'
+import { LEVELS, ETATS, ZONES, TRANSFORMATIONS, QUARTIERS, TYPES_BIEN, STATUTS, CATEGORIES_RIAD, fmtM, fmtMAD, fmtEUR, calcEstimation } from '@/lib/constants'
 import { Card, SectionLabel, Divider, StatutChip, FieldInput, FieldSelect, StatRow, PrixM2Block, PageHeader, Btn, Chip } from '@/components/ui'
 import PhotoGallery from '@/components/PhotoGallery'
+import { BtnMaps } from '@/components/CarteMarrakech'
 
 const EMPTY_RIAD: Partial<Riad> = {
-  typeBien: 'riad', titre: false, meuble: false, enActivite: false,
-  piscine: false, bassin: false, clim: false, photos: [],
+  categorie: 'portefeuille', typeBien: 'riad', titre: false, meuble: false, enActivite: false,
+  piscine: false, bassin: false, clim: false, photos: [], lat: null, lng: null,
 }
 
 // ── RIADS LIST ──────────────────────────────────────────────────────────────
@@ -38,6 +39,10 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
               <div className="riad-card-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 20px' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    {/* Badge catégorie */}
+                    {r.categorie === 'prospection' && (
+                      <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 8, background: '#E6F1FB', color: '#185FA5', border: '1px solid rgba(24,95,165,0.25)', fontWeight: 500 }}>◆ Prospection</span>
+                    )}
                     {r.typeBien && r.typeBien !== 'riad' && (
                       <span style={{ fontSize: 10, color: 'var(--mid)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 4, padding: '2px 7px' }}>{TYPES_BIEN[r.typeBien]}</span>
                     )}
@@ -73,6 +78,7 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
                     <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic' }}>Prix à renseigner</div>
                   )}
                   <div className="riad-card-btns" style={{ display: 'flex', gap: 6, marginTop: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <BtnMaps lat={r.lat ?? null} lng={r.lng ?? null} nom={r.nom} sm />
                     <Btn label="Présenter" onClick={() => onPresent(r)} sm />
                     <Btn label="Estimer" onClick={() => onEstimate(r)} primary sm />
                     <Btn label="Fiche" onClick={() => onEdit(r)} sm />
@@ -155,6 +161,25 @@ export function RiadFiche({ initial, onSave, onCancel }: {
       <div className="grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Card>
           <SectionLabel>Identification</SectionLabel>
+
+          {/* Catégorie : Portefeuille ou Prospection */}
+          <div style={{ marginBottom: 14 }}>
+            <div className="label">Catégorie</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              {(Object.entries(CATEGORIES_RIAD) as [CategorieRiad, typeof CATEGORIES_RIAD[CategorieRiad]][]).map(([k, v]) => (
+                <button key={k} onClick={() => set('categorie', k)} style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                  background: (r.categorie ?? 'portefeuille') === k ? v.bg : 'var(--bg)',
+                  border: `1px solid ${(r.categorie ?? 'portefeuille') === k ? v.color + '55' : 'var(--line)'}`,
+                  color: (r.categorie ?? 'portefeuille') === k ? v.color : 'var(--soft)',
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 500 }}>{v.label}</div>
+                  <div style={{ fontSize: 10, marginTop: 2 }}>{v.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
             <FieldInput label="Nom du bien" value={r.nom} onChange={v => set('nom', v)} placeholder="Riad Almas…" />
             <div style={{ marginBottom: 16 }}>
@@ -187,6 +212,16 @@ export function RiadFiche({ initial, onSave, onCancel }: {
             options={[['', '— État —'], ['tres_bon', 'Très bon état / Totalement rénové'], ['bon', 'Bon état / rénové'], ['moyen', 'État moyen'], ['mauvais', 'Mauvais état'], ['ruine', 'À rénover']]} />
           <FieldInput label="Proximité" value={r.proximite} onChange={v => set('proximite', v)} placeholder="5 min Jemaa el-Fna, tombeaux Saadiens…" />
           <FieldInput label="Vue" value={r.vue} onChange={v => set('vue', v)} placeholder="Vue Palais Royal, jardins…" />
+          {/* GPS */}
+          <div style={{ marginBottom: 12 }}>
+            <div className="label">Coordonnées GPS</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginTop: 6 }}>
+              <input className="field-input" type="number" step="0.0001" value={r.lat ?? ''} onChange={ev => set('lat', ev.target.value ? Number(ev.target.value) : null)} placeholder="Latitude 31.6295" />
+              <input className="field-input" type="number" step="0.0001" value={r.lng ?? ''} onChange={ev => set('lng', ev.target.value ? Number(ev.target.value) : null)} placeholder="Longitude -7.9811" />
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { set('lat', Math.round(pos.coords.latitude * 10000) / 10000); set('lng', Math.round(pos.coords.longitude * 10000) / 10000) }) }} title="Ma position actuelle" style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg)', cursor: 'pointer', fontSize: 16 }}>📍</button>
+            </div>
+            {r.lat && r.lng && <div style={{ marginTop: 6 }}><BtnMaps lat={r.lat} lng={r.lng} nom={r.nom || 'Riad'} sm /></div>}
+          </div>
           <div style={{ marginTop: 4 }}>
             <div className="label">Équipements & statut</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>

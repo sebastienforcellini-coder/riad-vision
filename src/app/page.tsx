@@ -8,14 +8,15 @@ import Prestataires from '@/components/Prestataires'
 import Agenda from '@/components/Agenda'
 import CRM from '@/components/CRM'
 import Comparateur from '@/components/Comparateur'
+import CarteMarrakech from '@/components/CarteMarrakech'
 import type { Riad } from '@/types'
 
-export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda' | 'crm' | 'comparateur'
+export type View = 'dashboard' | 'riads' | 'fiche' | 'estimateur' | 'resultats' | 'presentation' | 'prestataires' | 'agenda' | 'crm' | 'comparateur' | 'carte'
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Accueil', riads: 'Mes Riads', fiche: 'Fiche Riad',
   estimateur: 'Estimateur', resultats: 'Résultats', presentation: 'Présentation',
-  prestataires: 'Prestataires', agenda: 'Agenda', crm: 'Contacts', comparateur: 'Comparateur',
+  prestataires: 'Prestataires', agenda: 'Agenda', crm: 'Contacts', comparateur: 'Comparateur', carte: 'Carte',
 }
 
 export default function HomePage() {
@@ -192,6 +193,9 @@ export default function HomePage() {
           )}
           {view === 'comparateur' && (
             <Comparateur riads={app.state.riads} />
+          )}
+          {view === 'carte' && (
+            <CarteMarrakech riads={app.state.riads} onSelectRiad={r => navigate('fiche', { riad: r })} />
           )}
           {view === 'crm' && (
             <CRM
