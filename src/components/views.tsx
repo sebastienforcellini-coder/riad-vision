@@ -700,10 +700,11 @@ export function Resultats({ estimation, riads, onBack, onRiads, onPresent }: {
 export function Presentation({ estimation, riads, onBack }: {
   estimation: Estimation; riads: Riad[]; onBack: () => void
 }) {
+  const [selectedRiadId, setSelectedRiadId] = useState<number | null>(estimation.riadId)
   const e = estimation
   const surf = e.mode === 'rapide' ? Number(e.surface) || 0 : Object.values(e.zones).reduce((a, b) => a + (Number(b) || 0), 0)
   const res = calcEstimation(e.niveau, surf, e.transf, e.prixPerso)
-  const riad = riads.find(r => r.id === e.riadId)
+  const riad = riads.find(r => r.id === (selectedRiadId ?? e.riadId))
   const prix = riad ? (riad.prixN ?? riad.prixD) : null
 
   // Rentabilité
@@ -727,12 +728,24 @@ export function Presentation({ estimation, riads, onBack }: {
         }
       `}</style>
 
-      <div className="no-print" style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="no-print" style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div className="serif" style={{ fontSize: 24, color: 'var(--text)', fontStyle: 'italic', fontWeight: 300 }}>Présentation client</div>
           <div style={{ fontSize: 12, color: 'var(--soft)', marginTop: 4 }}>Vue simplifiée — montrez cet écran ou imprimez en PDF</div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        {/* Sélecteur de riad */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <select
+            value={selectedRiadId ?? ''}
+            onChange={e => setSelectedRiadId(e.target.value ? Number(e.target.value) : null)}
+            className="field-input"
+            style={{ minWidth: 200, fontSize: 13 }}
+          >
+            <option value="">— Choisir un riad —</option>
+            {riads.map(r => (
+              <option key={r.id} value={r.id}>{r.nom}{r.quartier ? ' · ' + r.quartier : ''}</option>
+            ))}
+          </select>
           <Btn label="← Retour" onClick={onBack} />
           <Btn label="Imprimer / PDF" onClick={handlePrint} primary />
         </div>
