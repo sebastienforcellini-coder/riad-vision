@@ -22,12 +22,11 @@ export function BtnMaps({ lat, lng, nom, sm }: { lat: number | null; lng: number
   )
 }
 
-function markerHtml(categorie: 'portefeuille' | 'prospection', statut: string) {
+function markerHtml(categorie: 'portefeuille' | 'prospection') {
   const cat = CATEGORIES_RIAD[categorie]
   const isPros = categorie === 'prospection'
 
   if (isPros) {
-    // Marqueur prospection : losange bleu
     return `<div style="
       width: 22px; height: 22px;
       background: ${cat.color};
@@ -37,11 +36,8 @@ function markerHtml(categorie: 'portefeuille' | 'prospection', statut: string) {
       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
     "></div>`
   } else {
-    // Marqueur portefeuille : goutte ocre/verte selon statut
-    const s = STATUTS[statut as keyof typeof STATUTS]
-    const color = s?.c ?? cat.color
     return `<div style="
-      background: ${color};
+      background: ${cat.color};
       border: 2px solid white;
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
@@ -114,7 +110,7 @@ export default function CarteMarrakech({ riads, onSelectRiad }: {
 
       const icon = L.divIcon({
         className: '',
-        html: markerHtml(cat, r.statut),
+        html: markerHtml(cat),
         iconSize: [24, 24],
         iconAnchor: [12, 24],
         popupAnchor: [0, -28],
@@ -184,11 +180,11 @@ export default function CarteMarrakech({ riads, onSelectRiad }: {
       <div style={{ display: 'flex', gap: 16, marginTop: 10, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--soft)' }}>
           <div style={{ width: 12, height: 12, background: '#8C5A28', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', border: '1.5px solid white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-          Portefeuille — goutte ocre/verte
+          Portefeuille
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--soft)' }}>
           <div style={{ width: 12, height: 12, background: '#185FA5', borderRadius: 2, transform: 'rotate(45deg)', border: '1.5px solid white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-          Prospection — losange bleu
+          Prospection
         </div>
       </div>
 
