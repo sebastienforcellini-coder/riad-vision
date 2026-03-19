@@ -5,19 +5,20 @@ import { STATUTS, CATEGORIES_RIAD, fmtM } from '@/lib/constants'
 
 const MARRAKECH_CENTER = { lat: 31.6295, lng: -7.9811 }
 
-function openMaps(lat: number, lng: number, nom: string) {
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-  if (isIOS) window.open(`maps://maps.apple.com/?q=${encodeURIComponent(nom)}&ll=${lat},${lng}`, '_blank')
-  else window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank')
+function openMaps(lat: number, lng: number, app: 'google' | 'apple' | 'waze') {
+  if (app === 'google') window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank')
+  else if (app === 'apple') window.open(`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`, '_blank')
+  else window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank')
 }
 
 export function BtnMaps({ lat, lng, nom, sm }: { lat: number | null; lng: number | null; nom: string; sm?: boolean }) {
   if (!lat || !lng) return null
   return (
-    <button onClick={e => { e.stopPropagation(); openMaps(lat, lng, nom) }} style={{
-      padding: sm ? '4px 8px' : '6px 12px', borderRadius: 6, fontSize: sm ? 10 : 11, cursor: 'pointer',
-      background: '#185FA5', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: 4,
-    }}>📍 Maps</button>
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      <button onClick={e => { e.stopPropagation(); openMaps(lat, lng, 'google') }} style={{ padding: sm ? '3px 7px' : '5px 10px', borderRadius: 5, fontSize: sm ? 10 : 11, cursor: 'pointer', background: '#4285F4', color: 'white', border: 'none' }}>Google</button>
+      <button onClick={e => { e.stopPropagation(); openMaps(lat, lng, 'apple') }} style={{ padding: sm ? '3px 7px' : '5px 10px', borderRadius: 5, fontSize: sm ? 10 : 11, cursor: 'pointer', background: '#1A1814', color: 'white', border: 'none' }}>Plans</button>
+      <button onClick={e => { e.stopPropagation(); openMaps(lat, lng, 'waze') }} style={{ padding: sm ? '3px 7px' : '5px 10px', borderRadius: 5, fontSize: sm ? 10 : 11, cursor: 'pointer', background: '#33CCFF', color: '#1A1814', border: 'none' }}>Waze</button>
+    </div>
   )
 }
 
@@ -127,8 +128,21 @@ export default function CarteMarrakech({ riads, onSelectRiad }: {
           <div style="font-size:15px;font-style:italic;color:#1A1814;margin-bottom:3px;">${r.nom}</div>
           <div style="font-size:11px;color:#6B6560;margin-bottom:6px;">${r.quartier || ''}${r.adresse ? ' · ' + r.adresse : ''}</div>
           ${prix ? `<div style="font-size:13px;color:${catInfo.color};font-weight:500;margin-bottom:3px;">${fmtM(prix)}</div>` : ''}
-          ${r.surface ? `<div style="font-size:11px;color:#6B6560;margin-bottom:6px;">${r.surface} m²${r.chambres ? ' · ' + r.chambres + ' ch.' : ''}</div>` : ''}
-          <a href="${mapsUrl}" style="display:inline-block;padding:4px 10px;background:#185FA5;color:white;border-radius:4px;font-size:10px;text-decoration:none;font-family:sans-serif;">📍 Naviguer</a>
+          ${r.surface ? `<div style="font-size:11px;color:#6B6560;margin-bottom:8px;">${r.surface} m²${r.chambres ? ' · ' + r.chambres + ' ch.' : ''}</div>` : ''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank"
+              style="padding:5px 9px;background:#4285F4;color:white;border-radius:5px;font-size:10px;text-decoration:none;font-family:sans-serif;display:inline-flex;align-items:center;gap:3px;">
+              🗺 Google
+            </a>
+            <a href="maps://maps.apple.com/?q=${encodeURIComponent(r.nom)}&ll=${r.lat},${r.lng}" target="_blank"
+              style="padding:5px 9px;background:#000;color:white;border-radius:5px;font-size:10px;text-decoration:none;font-family:sans-serif;display:inline-flex;align-items:center;gap:3px;">
+              🍎 Plans
+            </a>
+            <a href="https://waze.com/ul?ll=${r.lat},${r.lng}&navigate=yes" target="_blank"
+              style="padding:5px 9px;background:#33CCFF;color:white;border-radius:5px;font-size:10px;text-decoration:none;font-family:sans-serif;display:inline-flex;align-items:center;gap:3px;">
+              🚗 Waze
+            </a>
+          </div>
         </div>
       `
 
