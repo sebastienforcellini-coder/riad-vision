@@ -215,12 +215,65 @@ export function RiadFiche({ initial, onSave, onCancel }: {
           {/* GPS */}
           <div style={{ marginBottom: 12 }}>
             <div className="label">Coordonnées GPS</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginTop: 6 }}>
-              <input className="field-input" type="number" step="0.0001" value={r.lat ?? ''} onChange={ev => set('lat', ev.target.value ? Number(ev.target.value) : null)} placeholder="Latitude 31.6295" />
-              <input className="field-input" type="number" step="0.0001" value={r.lng ?? ''} onChange={ev => set('lng', ev.target.value ? Number(ev.target.value) : null)} placeholder="Longitude -7.9811" />
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { set('lat', Math.round(pos.coords.latitude * 10000) / 10000); set('lng', Math.round(pos.coords.longitude * 10000) / 10000) }) }} title="Ma position actuelle" style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg)', cursor: 'pointer', fontSize: 16 }}>📍</button>
+            {/* Champ copier-coller DMS */}
+            <div style={{ marginTop: 6, marginBottom: 8 }}>
+              <input
+                className="field-input"
+                type="text"
+                placeholder='Coller ici : 31°39′44.6″N 8°00′23.2″W'
+                onChange={ev => {
+                  const v = ev.target.value.trim()
+                  if (!v) return
+                  // Parser DMS : 31°39'44.6"N 8°00'23.2"W (supporte °′″ ou °'"  ou degrés décimaux)
+                  const parseDMS = (str: string): number | null => {
+                    // Essai décimal direct
+                    const dec = parseFloat(str)
+                    if (!isNaN(dec) && str.match(/^-?[\d.]+$/)) return dec
+                    // DMS avec direction N/S/E/W
+                    const m = str.replace(/[°′']/g, ' ').replace(/[″"]/g, ' ').replace(/\s+/g, ' ').trim()
+                      .match(/^(\d+)\s+(\d+)\s+([\d.]+)\s*([NSEW])$/i)
+                    if (!m) return null
+                    const [, d, min, sec, dir] = m
+                    let dd = parseFloat(d) + parseFloat(min) / 60 + parseFloat(sec) / 3600
+                    if (dir.toUpperCase() === 'S' || dir.toUpperCase() === 'W') dd = -dd
+                    return Math.round(dd * 100000) / 100000
+                  }
+                  // Séparer les deux coordonnées
+                  const parts = v.split(/\s+(?=\d)/)
+                  if (parts.length >= 2) {
+                    const lat = parseDMS(parts[0])
+                    const lng = parseDMS(parts[1])
+                    if (lat !== null && lng !== null) {
+                      set('lat', lat)
+                      set('lng', lng)
+                      ev.target.value = ''
+                    }
+                  }
+                }}
+                style={{ fontSize: 12 }}
+              />
+              <div style={{ fontSize: 10, color: 'var(--soft)', marginTop: 3 }}>
+                Copiez depuis Google Maps → clic droit → coordonnées
+              </div>
             </div>
-            {r.lat && r.lng && <div style={{ marginTop: 6 }}><BtnMaps lat={r.lat} lng={r.lng} nom={r.nom || 'Riad'} sm /></div>}
+            {/* Champs décimaux + bouton position */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
+              <input className="field-input" type="number" step="0.00001" value={r.lat ?? ''} onChange={ev => set('lat', ev.target.value ? Number(ev.target.value) : null)} placeholder="Lat. 31.6295" />
+              <input className="field-input" type="number" step="0.00001" value={r.lng ?? ''} onChange={ev => set('lng', ev.target.value ? Number(ev.target.value) : null)} placeholder="Lng. -7.9811" />
+              <button onClick={() => {
+                if (!navigator.geolocation) return
+                navigator.geolocation.getCurrentPosition(pos => {
+                  set('lat', Math.round(pos.coords.latitude * 100000) / 100000)
+                  set('lng', Math.round(pos.coords.longitude * 100000) / 100000)
+                })
+              }} title="Ma position GPS actuelle" style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg)', cursor: 'pointer', fontSize: 16 }}>📍</button>
+            </div>
+            {r.lat && r.lng && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+                <BtnMaps lat={r.lat} lng={r.lng} nom={r.nom || 'Riad'} sm />
+                <span style={{ fontSize: 10, color: 'var(--soft)' }}>{r.lat}, {r.lng}</span>
+              </div>
+            )}
           </div>
           <div style={{ marginTop: 4 }}>
             <div className="label">Équipements & statut</div>
