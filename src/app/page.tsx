@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAppState } from '@/lib/useAppState'
 import Sidebar, { Logo } from '@/components/Sidebar'
 import Dashboard from '@/components/Dashboard'
@@ -30,6 +30,13 @@ export default function HomePage() {
   const [confirmDeleteRdv, setConfirmDeleteRdv] = useState<number | null>(null)
   const [confirmDeleteProprio, setConfirmDeleteProprio] = useState<number | null>(null)
   const [isOffline, setIsOffline] = useState(false)
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [lastCreatedId, setLastCreatedId] = useState<number | null>(null)
+
+  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }, [])
 
   useEffect(() => {
     const update = () => setIsOffline(!navigator.onLine)
@@ -38,6 +45,13 @@ export default function HomePage() {
     setIsOffline(!navigator.onLine)
     return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update) }
   }, [])
+
+  // Effacer le highlight après 4s
+  useEffect(() => {
+    if (!lastCreatedId) return
+    const t = setTimeout(() => setLastCreatedId(null), 4000)
+    return () => clearTimeout(t)
+  }, [lastCreatedId])
 
   const navigate = (v: View, opts?: { riad?: Partial<Riad> }) => {
     if (opts?.riad !== undefined) setEditRiad(opts.riad)
@@ -54,6 +68,20 @@ export default function HomePage() {
     navigate('presentation')
   }
 
+  const handleSaveRiad = (r: Partial<Riad>) => {
+    const isNew = !r.id
+    if (isNew) {
+      const newId = app.state.nextId
+      app.addRiad(r as Omit<Riad, 'id' | 'createdAt'>)
+      setLastCreatedId(newId)
+      showToast(`${r.nom} ajouté à votre portefeuille`)
+    } else {
+      app.updateRiad(r as Riad)
+      showToast(`${r.nom} enregistré`)
+    }
+    navigate('riads')
+  }
+
   if (!app.loaded) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--soft)', fontSize: 12, letterSpacing: 2 }}>
@@ -64,12 +92,27 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 500, background: toast.type === 'success' ? '#1A1814' : '#C0392B',
+          color: 'white', padding: '12px 24px', borderRadius: 10, fontSize: 13,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)', whiteSpace: 'nowrap',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span>{toast.type === 'success' ? '✓' : '✕'}</span>
+          {toast.msg}
+        </div>
+      )}
+
       {/* Bandeau hors-ligne */}
       {isOffline && (
         <div style={{ background: '#8C5A28', color: 'white', textAlign: 'center', padding: '6px', fontSize: 12, letterSpacing: 0.5 }}>
           📵 Mode hors-ligne — données en cache disponibles
         </div>
       )}
+
       <div className="mobile-topbar">
         <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 4, color: 'var(--mid)', padding: '6px 10px', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>☰</button>
         <div style={{ textAlign: 'center' }}>
@@ -94,7 +137,7 @@ export default function HomePage() {
             <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Cette action est irréversible.</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
-              <button onClick={() => { app.deleteRiad(confirmDelete); setConfirmDelete(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+              <button onClick={() => { app.deleteRiad(confirmDelete); setConfirmDelete(null); showToast('Riad supprimé', 'error') }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
             </div>
           </div>
         </div>
@@ -108,7 +151,7 @@ export default function HomePage() {
             <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Ses tarifs seront perdus.</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setConfirmDeletePresta(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
-              <button onClick={() => { app.deletePrestataire(confirmDeletePresta); setConfirmDeletePresta(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+              <button onClick={() => { app.deletePrestataire(confirmDeletePresta); setConfirmDeletePresta(null); showToast('Prestataire supprimé', 'error') }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
             </div>
           </div>
         </div>
@@ -122,7 +165,7 @@ export default function HomePage() {
             <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Son historique sera perdu.</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setConfirmDeleteProprio(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
-              <button onClick={() => { app.deleteProprietaire(confirmDeleteProprio); setConfirmDeleteProprio(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+              <button onClick={() => { app.deleteProprietaire(confirmDeleteProprio); setConfirmDeleteProprio(null); showToast('Contact supprimé', 'error') }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
             </div>
           </div>
         </div>
@@ -136,7 +179,7 @@ export default function HomePage() {
             <div style={{ fontSize: 13, color: 'var(--mid)', marginBottom: 24 }}>Cette action est irréversible.</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setConfirmDeleteRdv(null)} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--text)' }}>Annuler</button>
-              <button onClick={() => { app.deleteRdv(confirmDeleteRdv); setConfirmDeleteRdv(null) }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
+              <button onClick={() => { app.deleteRdv(confirmDeleteRdv); setConfirmDeleteRdv(null); showToast('RDV supprimé', 'error') }} style={{ flex: 1, padding: 10, borderRadius: 6, fontSize: 13, cursor: 'pointer', background: '#C0392B', border: 'none', color: 'white' }}>Supprimer</button>
             </div>
           </div>
         </div>
@@ -151,19 +194,20 @@ export default function HomePage() {
           {view === 'riads' && (
             <RiadsList
               riads={app.state.riads}
+              lastCreatedId={lastCreatedId}
               onNew={() => navigate('fiche', { riad: {} })}
               onEdit={r => navigate('fiche', { riad: r })}
               onEstimate={startEstimate}
               onPresent={startPresentation}
               onDelete={id => setConfirmDelete(id)}
-              onToggleCategorie={r => app.updateRiad({ ...r, categorie: (r.categorie ?? 'portefeuille') === 'portefeuille' ? 'prospection' : 'portefeuille' })}
+              onToggleCategorie={r => { app.updateRiad({ ...r, categorie: (r.categorie ?? 'portefeuille') === 'portefeuille' ? 'prospection' : 'portefeuille' }); showToast('Catégorie mise à jour') }}
             />
           )}
           {view === 'fiche' && (
             <RiadFiche
               initial={editRiad}
               marchePrix={app.state.marchePrix}
-              onSave={r => { if (r.id) app.updateRiad(r as Riad); else app.addRiad(r as Omit<Riad, 'id' | 'createdAt'>); navigate('riads') }}
+              onSave={handleSaveRiad}
               onCancel={() => navigate('riads')}
             />
           )}
@@ -180,10 +224,10 @@ export default function HomePage() {
             <Agenda
               rdvs={app.state.rdvs}
               riads={app.state.riads}
-              onAdd={app.addRdv}
-              onEdit={app.updateRdv}
+              onAdd={r => { app.addRdv(r); showToast('RDV ajouté') }}
+              onEdit={r => { app.updateRdv(r); showToast('RDV enregistré') }}
               onDelete={id => setConfirmDeleteRdv(id)}
-              onToggleFait={app.updateRdv}
+              onToggleFait={r => { app.updateRdv(r); showToast(r.fait ? 'RDV marqué fait ✓' : 'RDV rouvert') }}
             />
           )}
           {view === 'comparateur' && (
@@ -194,8 +238,7 @@ export default function HomePage() {
           )}
           {(view === 'marche' || view === 'prestataires') && (
             <div>
-              {/* Onglets Marché / Prestataires */}
-              <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--line)', paddingBottom: 0 }}>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--line)' }}>
                 {([['marche', 'Fourchettes marché'], ['prestataires', 'Prestataires']] as const).map(([v, l]) => (
                   <button key={v} onClick={() => navigate(v)} style={{
                     padding: '8px 18px', fontSize: 13, cursor: 'pointer', border: 'none', background: 'transparent',
@@ -206,12 +249,12 @@ export default function HomePage() {
                   }}>{l}</button>
                 ))}
               </div>
-              {view === 'marche' && <Marche marchePrix={app.state.marchePrix} onSave={app.setMarchePrix} />}
+              {view === 'marche' && <Marche marchePrix={app.state.marchePrix} onSave={p => { app.setMarchePrix(p); showToast('Fourchettes sauvegardées') }} />}
               {view === 'prestataires' && (
                 <Prestataires
                   prestataires={app.state.prestataires}
-                  onAdd={app.addPrestataire}
-                  onEdit={app.updatePrestataire}
+                  onAdd={p => { app.addPrestataire(p); showToast('Prestataire ajouté') }}
+                  onEdit={p => { app.updatePrestataire(p); showToast('Prestataire enregistré') }}
                   onDelete={id => setConfirmDeletePresta(id)}
                 />
               )}
@@ -221,8 +264,8 @@ export default function HomePage() {
             <CRM
               proprietaires={app.state.proprietaires}
               riads={app.state.riads}
-              onAdd={app.addProprietaire}
-              onEdit={app.updateProprietaire}
+              onAdd={p => { app.addProprietaire(p); showToast('Contact ajouté') }}
+              onEdit={p => { app.updateProprietaire(p); showToast('Contact enregistré') }}
               onDelete={id => setConfirmDeleteProprio(id)}
             />
           )}

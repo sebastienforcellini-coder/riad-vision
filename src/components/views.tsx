@@ -50,8 +50,8 @@ function Section({ title, badge, children, defaultOpen = false }: {
 }
 
 // ── RIADS LIST ──────────────────────────────────────────────────────────────
-export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelete, onToggleCategorie }: {
-  riads: Riad[]; onNew: () => void; onEdit: (r: Riad) => void
+export function RiadsList({ riads, lastCreatedId, onNew, onEdit, onEstimate, onPresent, onDelete, onToggleCategorie }: {
+  riads: Riad[]; lastCreatedId?: number | null; onNew: () => void; onEdit: (r: Riad) => void
   onEstimate: (r: Riad) => void; onPresent: (r: Riad) => void; onDelete: (id: number) => void
   onToggleCategorie: (r: Riad) => void
 }) {
@@ -65,8 +65,9 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
     const prix = r.prixN ?? r.prixD
     const m2mad = prix && r.surface ? Math.round(prix / r.surface) : null
     const m2eur = m2mad ? Math.round(m2mad / 11) : null
+    const isNew = r.id === lastCreatedId
     return (
-      <Card key={r.id} style={{ padding: 0, overflow: 'hidden' }}>
+      <Card key={r.id} style={{ padding: 0, overflow: 'hidden', transition: 'box-shadow 0.3s', boxShadow: isNew ? '0 0 0 2px var(--green)' : 'none' }}>
         {r.photos && r.photos.length > 0 && (
           <div style={{ height: 140, overflow: 'hidden', cursor: 'pointer' }} onClick={() => onEdit(r)}>
             <img src={`https://nsogcsmriufjcymlmatz.supabase.co/storage/v1/object/public/riad-photos/${r.photos[0]}`} alt={r.nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -106,12 +107,12 @@ export function RiadsList({ riads, onNew, onEdit, onEstimate, onPresent, onDelet
             ) : (
               <div style={{ fontSize: 12, color: 'var(--soft)', fontStyle: 'italic' }}>Prix à renseigner</div>
             )}
-            <div className="riad-card-btns" style={{ display: 'flex', gap: 6, marginTop: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <BtnMaps lat={r.lat ?? null} lng={r.lng ?? null} nom={r.nom} sm />
-              <Btn label="Présenter" onClick={() => onPresent(r)} sm />
-              <Btn label="Estimer" onClick={() => onEstimate(r)} primary sm />
+            <div className="riad-card-btns" style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <Btn label="Fiche" onClick={() => onEdit(r)} sm />
-              <button onClick={() => onDelete(r.id)} style={{ padding: '6px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer', background: 'transparent', border: '1px solid transparent', color: 'var(--soft)' }}
+              <Btn label="Estimer" onClick={() => onEstimate(r)} primary sm />
+              <Btn label="Présenter" onClick={() => onPresent(r)} sm />
+              <BtnMaps lat={r.lat ?? null} lng={r.lng ?? null} nom={r.nom} sm />
+              <button onClick={() => onDelete(r.id)} style={{ padding: '8px 12px', borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'transparent', border: '1px solid transparent', color: 'var(--soft)', minWidth: 36, textAlign: 'center' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#C0392B'; (e.currentTarget as HTMLElement).style.borderColor = '#f0b8b5' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--soft)'; (e.currentTarget as HTMLElement).style.borderColor = 'transparent' }}>✕</button>
             </div>
@@ -190,6 +191,17 @@ export function RiadFiche({ initial, marchePrix, onSave, onCancel }: {
   const set = (k: keyof Riad, v: unknown) => setR(prev => ({ ...prev, [k]: v }))
   const toggle = (k: keyof Riad) => setR(prev => ({ ...prev, [k]: !prev[k as keyof typeof prev] }))
 
+  const [errors, setErrors] = useState<{ nom?: boolean; quartier?: boolean }>({})
+
+  const handleSave = () => {
+    const e: typeof errors = {}
+    if (!r.nom?.trim()) e.nom = true
+    if (!r.quartier) e.quartier = true
+    if (Object.keys(e).length > 0) { setErrors(e); return }
+    setErrors({})
+    onSave(r)
+  }
+
   const handleImport = async () => {
     if (!importUrl) return
     setImporting(true); setImportMsg('')
@@ -230,11 +242,11 @@ export function RiadFiche({ initial, marchePrix, onSave, onCancel }: {
     <div>
       <PageHeader
         title={isNew ? 'Nouveau riad' : (r.nom || 'Modifier la fiche')}
-        subtitle={isNew ? 'Remplissez au minimum le nom, le quartier et le prix' : undefined}
+        subtitle={isNew ? 'Remplissez au minimum le nom et le quartier' : undefined}
         action={
           <div style={{ display: 'flex', gap: 8 }}>
             <Btn label="Annuler" onClick={onCancel} />
-            <Btn label={isNew ? 'Créer' : 'Enregistrer'} onClick={() => { if (r.nom) onSave(r) }} primary />
+            <Btn label={isNew ? 'Créer' : 'Enregistrer'} onClick={handleSave} primary />
           </div>
         }
       />
@@ -287,7 +299,13 @@ export function RiadFiche({ initial, marchePrix, onSave, onCancel }: {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-          <FieldInput label="Nom du bien *" value={r.nom} onChange={v => set('nom', v)} placeholder="Riad Almas…" />
+          <div style={{ marginBottom: 16 }}>
+            <div className="label" style={{ color: errors.nom ? '#C0392B' : undefined }}>Nom du bien *</div>
+            <input className="field-input" value={r.nom ?? ''} onChange={e => { set('nom', e.target.value); setErrors(p => ({ ...p, nom: false })) }}
+              placeholder="Riad Almas…"
+              style={{ borderColor: errors.nom ? '#C0392B' : undefined }} />
+            {errors.nom && <div style={{ fontSize: 11, color: '#C0392B', marginTop: 3 }}>Le nom est requis</div>}
+          </div>
           <div style={{ marginBottom: 16 }}>
             <div className="label">Type</div>
             <select className="field-input" value={r.typeBien ?? ''} onChange={e => set('typeBien', e.target.value as TypeBien)}>
@@ -297,8 +315,14 @@ export function RiadFiche({ initial, marchePrix, onSave, onCancel }: {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <FieldSelect label="Quartier" value={r.quartier ?? ''} onChange={v => set('quartier', v)}
-            options={QUARTIERS.map(q => [q, q || '— Quartier —'])} />
+          <div style={{ marginBottom: 16 }}>
+            <div className="label" style={{ color: errors.quartier ? '#C0392B' : undefined }}>Quartier *</div>
+            <select className="field-input" value={r.quartier ?? ''} onChange={e => { set('quartier', e.target.value); setErrors(p => ({ ...p, quartier: false })) }}
+              style={{ borderColor: errors.quartier ? '#C0392B' : undefined }}>
+              {QUARTIERS.map(q => <option key={q} value={q}>{q || '— Quartier —'}</option>)}
+            </select>
+            {errors.quartier && <div style={{ fontSize: 11, color: '#C0392B', marginTop: 3 }}>Le quartier est requis</div>}
+          </div>
           <FieldSelect label="Statut" value={r.statut ?? ''} onChange={v => set('statut', v)}
             options={[['', '— Statut —'], ['visite', 'Visite'], ['negociation', 'Négociation'], ['proposition', 'Proposition'], ['signe', 'Signé'], ['archive', 'Archivé']]} />
         </div>
@@ -467,7 +491,7 @@ export function RiadFiche({ initial, marchePrix, onSave, onCancel }: {
       {/* Boutons bas de page */}
       <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
         <Btn label="Annuler" onClick={onCancel} />
-        <Btn label={isNew ? 'Créer le riad' : 'Enregistrer'} onClick={() => { if (r.nom) onSave(r) }} primary />
+        <Btn label={isNew ? 'Créer le riad' : 'Enregistrer'} onClick={handleSave} primary />
       </div>
     </div>
   )
