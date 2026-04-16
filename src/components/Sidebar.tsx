@@ -1,18 +1,17 @@
 'use client'
 import type { View } from '@/app/page'
 
-const NAV = [
-  { k: 'dashboard'     as View, l: 'Accueil'      },
-  { k: 'riads'         as View, l: 'Mes riads'     },
-  { k: 'comparateur'   as View, l: 'Comparer'       },
-  { k: 'carte'         as View, l: 'Carte'          },
-  { k: 'marche'        as View, l: 'Marché'        },
-  { k: 'estimateur'    as View, l: 'Estimateur'    },
-  { k: 'resultats'     as View, l: 'Résultats'     },
-  { k: 'presentation'  as View, l: 'Présentation'  },
-  { k: 'agenda'        as View, l: 'Agenda'         },
-  { k: 'crm'           as View, l: 'Contacts'       },
-  { k: 'prestataires'  as View, l: 'Prestataires'  },
+// Résultats et Présentation sont accessibles depuis l'Estimateur
+// Prestataires est accessible depuis Marché (onglets)
+const NAV: { k: View; l: string; group?: View[] }[] = [
+  { k: 'dashboard',   l: 'Accueil'    },
+  { k: 'riads',       l: 'Mes riads'  },
+  { k: 'carte',       l: 'Carte'      },
+  { k: 'comparateur', l: 'Comparer'   },
+  { k: 'estimateur',  l: 'Estimateur', group: ['resultats', 'presentation'] },
+  { k: 'agenda',      l: 'Agenda'     },
+  { k: 'crm',         l: 'Contacts'   },
+  { k: 'marche',      l: 'Marché',    group: ['prestataires'] },
 ]
 
 const Logo = ({ size = 'sm' }: { size?: 'sm' | 'lg' }) => {
@@ -40,7 +39,7 @@ export default function Sidebar({ currentView, onNavigate }: { currentView: View
       </div>
       <nav style={{ flex: 1, padding: '4px 10px' }}>
         {NAV.map((item, i) => {
-          const active = currentView === item.k
+          const active = currentView === item.k || (item.group ?? []).includes(currentView)
           const isSeparator = i === 4
           return (
             <div key={item.k}>

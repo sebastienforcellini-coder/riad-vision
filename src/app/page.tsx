@@ -176,14 +176,6 @@ export default function HomePage() {
           {view === 'presentation' && (
             <Presentation estimation={app.state.estimation} riads={app.state.riads} onBack={() => navigate('resultats')} />
           )}
-          {view === 'prestataires' && (
-            <Prestataires
-              prestataires={app.state.prestataires}
-              onAdd={app.addPrestataire}
-              onEdit={app.updatePrestataire}
-              onDelete={id => setConfirmDeletePresta(id)}
-            />
-          )}
           {view === 'agenda' && (
             <Agenda
               rdvs={app.state.rdvs}
@@ -200,8 +192,30 @@ export default function HomePage() {
           {view === 'carte' && (
             <CarteMarrakech riads={app.state.riads} onSelectRiad={r => navigate('fiche', { riad: r })} />
           )}
-          {view === 'marche' && (
-            <Marche marchePrix={app.state.marchePrix} onSave={app.setMarchePrix} />
+          {(view === 'marche' || view === 'prestataires') && (
+            <div>
+              {/* Onglets Marché / Prestataires */}
+              <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--line)', paddingBottom: 0 }}>
+                {([['marche', 'Fourchettes marché'], ['prestataires', 'Prestataires']] as const).map(([v, l]) => (
+                  <button key={v} onClick={() => navigate(v)} style={{
+                    padding: '8px 18px', fontSize: 13, cursor: 'pointer', border: 'none', background: 'transparent',
+                    color: view === v ? 'var(--text)' : 'var(--soft)',
+                    fontWeight: view === v ? 500 : 400,
+                    borderBottom: view === v ? '2px solid var(--accent)' : '2px solid transparent',
+                    marginBottom: -1, transition: 'all 0.15s',
+                  }}>{l}</button>
+                ))}
+              </div>
+              {view === 'marche' && <Marche marchePrix={app.state.marchePrix} onSave={app.setMarchePrix} />}
+              {view === 'prestataires' && (
+                <Prestataires
+                  prestataires={app.state.prestataires}
+                  onAdd={app.addPrestataire}
+                  onEdit={app.updatePrestataire}
+                  onDelete={id => setConfirmDeletePresta(id)}
+                />
+              )}
+            </div>
           )}
           {view === 'crm' && (
             <CRM
