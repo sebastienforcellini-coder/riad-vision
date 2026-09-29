@@ -1,20 +1,27 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { COOKIE_NAME, authToken, getExpectedPassword } from '@/lib/auth'
 
-const COOKIE_NAME = 'rvp_auth'
+// Routes accessibles sans cookie. /api/ping est protégée par son propre CRON_SECRET.
+const PUBLIC_PATHS = ['/login', '/api/auth', '/api/ping']
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname === '/login' || pathname.startsWith('/api/')) {
+  if (PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.next()
   }
 
-  const cookie = request.cookies.get(COOKIE_NAME)
-  const password = process.env.BETA_PASSWORD || 'riad2025'
+  const expected = getExpectedPassword()
+  const cookie = request.cookies.get(COOKIE_NAME)?.value
 
-  if (cookie?.value === password) {
+  if (expected && cookie && cookie === (await authToken(expected))) {
     return NextResponse.next()
+  }
+
+  // Les routes API répondent 401 au lieu de rediriger vers la page de connexion.
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const url = request.nextUrl.clone()

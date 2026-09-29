@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { COOKIE_NAME, authToken, getExpectedPassword } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const { password } = body
-    const expected = process.env.BETA_PASSWORD || 'riad2025'
+  const expected = getExpectedPassword()
+  if (!expected) {
+    console.error('[auth] BETA_PASSWORD absent ou vide : accès refusé')
+    return NextResponse.json({ error: 'Not configured' }, { status: 503 })
+  }
 
-    if (!password || password.trim() !== expected.trim()) {
+  try {
+    const { password } = await req.json()
+
+    if (typeof password !== 'string' || password.trim() !== expected) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
     }
 
     const res = NextResponse.json({ ok: true })
-    res.cookies.set('rvp_auth', expected.trim(), {
+    res.cookies.set(COOKIE_NAME, await authToken(expected), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
